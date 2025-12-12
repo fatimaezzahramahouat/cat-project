@@ -82,7 +82,7 @@ function addCat() {
         .catch(err => console.error(err));
 }
 
-
+//delete cat
 
 function deleteCat(id) {
     if (!confirm("Delete this cat?")) return;

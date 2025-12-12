@@ -77,6 +77,7 @@ app.delete("/cats/:id", (req, res) => {
     });
 });
 
+
 // Add a record
 app.post("/cats", (req, res) => {
     pool.getConnection((err, connection) => {
@@ -101,13 +102,13 @@ app.post("/cats", (req, res) => {
 });
 
 // Update a record
-app.put("/cats/", (req, res) => {
+app.put("/cats/:id", (req, res) => {
     pool.getConnection((err, connection) => {
         if (err) {
             console.error("DB connection error:", err);
             return res.status(500).json({ error: "DB connection error" });
         }
-        const { id, name, tag, description, IMG } = req.body
+        const { id, name, tag, description, img } = req.body
         connection.query("UPDATE cats SET name = ? WHERE id = ?", [name, id], (qErr, rows) => {
             connection.release();
             if (qErr) {
@@ -119,7 +120,6 @@ app.put("/cats/", (req, res) => {
         console.log(req.body)
     });
 });
-
 
 // List on the Port 
 app.listen(port, () => {

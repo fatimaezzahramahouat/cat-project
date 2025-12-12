@@ -26,7 +26,7 @@ function createCard(cat) {
 <h3>${cat.name}</h3>
 <p>${cat.description}</p>
 <div class="card-actions">
-<button onclick="editCat(${cat.id})">✏️ Edit</button>
+<button onclick="editCat(${cat.id})"> Edit</button>
 
 <button class="danger" onclick='deleteCat(${cat.id})'>🗑 Delete</button>
 </div>
@@ -60,6 +60,27 @@ function closeModal() {
 
 
 // Add cat
+function addCat() {
+    const cat = {
+        name: name.value,
+        tag: tag.value,
+        description: description.value,
+        IMG: img.value // match your DB column
+    };
+
+    fetch("http://localhost:5000/cats", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(cat)
+    })
+        .then(res => res.json())
+        .then(data => {
+            console.log("Cat added:", data);
+            closeModal();
+            location.reload(); // refresh gallery
+        })
+        .catch(err => console.error(err));
+}
 
 
 

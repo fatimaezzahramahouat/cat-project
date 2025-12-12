@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cat Gallery</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+
+
+    <header>
+        <h1> Cat Gallery</h1>
+        <button id="addCatBtn"> Add Cat</button>
+    </header>
+
+
+    <main class="gallery" id="catGallery"></main>
+
+
+    <!-- Modal -->
+    <div class="modal" id="catModal">
+        <div class="modal-content">
+            <h2>Add New Cat</h2>
+            <input type="text" id="name" placeholder="Cat Name" />
+            <input type="text" id="tag" placeholder="Tag (cute, funny...)" />
+            <input type="text" id="img" placeholder="Image URL" />
+            <textarea id="description" placeholder="Description"></textarea>
+            <div class="actions">
+                <button onclick="addCat()">Save</button>
+                <button class="cancel" onclick="closeModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="script.js"></script>
+</body>
+
+</html>

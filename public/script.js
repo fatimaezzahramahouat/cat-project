@@ -60,22 +60,7 @@ function closeModal() {
 
 
 // Add cat
-function addCat() {
-    const cat = {
-        name: name.value,
-        tag: tag.value,
-        description: description.value,
-        img: img.value
-    };
 
-
-    fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(cat)
-    })
-        .then(() => location.reload());
-}
 
 
 function deleteCat(id) {
@@ -86,6 +71,23 @@ function deleteCat(id) {
         method: "DELETE"
     }).then(() => location.reload());
 
-} function editCat(id) {
+}
+function editCat(id) {
     console.log("EDIT CLICKED, ID =", id);
 }
+
+// New function to open the modal for adding a cat
+function openAddModal() {
+    // Clear input fields
+    name.value = "";
+    tag.value = "";
+    description.value = "";
+    img.value = "";
+    // Reset editing state
+    editingId = null;
+    // Show modal
+    modal.style.display = "flex";
+}
+
+// Attach event listener to Add Cat button
+document.getElementById('addCatBtn').addEventListener('click', openAddModal);

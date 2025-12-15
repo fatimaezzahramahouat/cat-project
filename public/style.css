@@ -97,3 +97,16 @@
     background: #ef4444;
     color: white;
 }
+
+.pagination button {
+    margin: 2px;
+    padding: 5px 10px;
+    border: none;
+    cursor: pointer;
+}
+
+.pagination button.active {
+    background-color: #007BFF;
+    color: white;
+    border-radius: 4px;
+}

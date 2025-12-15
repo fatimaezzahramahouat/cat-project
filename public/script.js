@@ -3,6 +3,8 @@ const gallery = document.getElementById("catGallery");
 const modal = document.getElementById("catModal");
 let editingId = null;
 let catsData = [];
+let currentPage = 1;//pagination
+const itemsPerPage = 8; // عدد القطط لكل صفحة//pagination
 
 // === تعريف inputs ===
 const nameInput = document.getElementById("name");
@@ -106,9 +108,14 @@ function editCat(id) {
 
 // === Render Gallery ===
 function renderGallery(cats) {
+    const gallery = document.getElementById("catGallery");
     gallery.innerHTML = "";
 
-    cats.forEach(cat => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedCats = cats.slice(startIndex, endIndex);
+
+    paginatedCats.forEach(cat => {
         const div = document.createElement("div");
         div.className = "card";
         div.innerHTML = `
@@ -123,7 +130,10 @@ function renderGallery(cats) {
         `;
         gallery.appendChild(div);
     });
+
+    renderPagination(cats.length);
 }
+
 
 // === Save Button ===
 function saveCat() {
@@ -133,6 +143,8 @@ function saveCat() {
         updateCat();
     }
 }
+
+//search
 const searchInput = document.getElementById("searchInput");
 
 // Event listener لكل مرة كيتبدّل value ديال البحث
@@ -148,7 +160,26 @@ searchInput.addEventListener("input", () => {
 
     renderGallery(filteredCats);
 });
+//pagination
+function renderPagination(totalItems) {
+    const paginationContainer = document.getElementById("pagination");
+    if (!paginationContainer) return;
 
+    paginationContainer.innerHTML = "";
+
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+    for (let i = 1; i <= totalPages; i++) {
+        const btn = document.createElement("button");
+        btn.innerText = i;
+        btn.className = i === currentPage ? "active" : "";
+        btn.onclick = () => {
+            currentPage = i;
+            renderGallery(catsData);
+        };
+        paginationContainer.appendChild(btn);
+    }
+}
 
 // === Close Modal ===
 function closeModal() {

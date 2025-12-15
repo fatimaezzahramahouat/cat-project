@@ -4,111 +4,157 @@ const modal = document.getElementById("catModal");
 let editingId = null;
 let catsData = [];
 
+// === تعريف inputs ===
+const nameInput = document.getElementById("name");
+const tagInput = document.getElementById("tag");
+const descriptionInput = document.getElementById("description");
+const imgInput = document.getElementById("img");
 
-
-fetch(API_URL)
-    .then(res => res.json())
-    .then(cats => {
-        gallery.innerHTML = "";
-        cats.forEach(cat => createCard(cat));
-    });
-
-
-function createCard(cat) {
-    const card = document.createElement("div");
-    card.className = "card";
-
-
-    card.innerHTML = `
-<img src="${cat.IMG}" />
-<div class="card-body">
-<span class="tag">${cat.tag}</span>
-<h3>${cat.name}</h3>
-<p>${cat.description}</p>
-<div class="card-actions">
-<button onclick="editCat(${cat.id})"> Edit</button>
-
-<button class="danger" onclick='deleteCat(${cat.id})'>🗑 Delete</button>
-</div>
-</div>
-`;
-
-
-    gallery.appendChild(card);
+// === Load Cats from API ===
+function loadCats() {
+    fetch(API_URL)
+        .then(res => res.json())
+        .then(data => {
+            catsData = data;
+            renderGallery(catsData);
+        });
 }
+loadCats();
 
+// === Open modal to add new cat ===
+function openAddModal() {
+    nameInput.value = "";
+    tagInput.value = "";
+    descriptionInput.value = "";
+    imgInput.value = "";
+    editingId = null;
 
-function openEdit(id) {
-    const cat = catsData.find(c => c.id === id);
-    if (!cat) return;
-
-    editingId = cat.id;
-    name.value = cat.name;
-    tag.value = cat.tag;
-    description.value = cat.description;
-
-    // ⚠️ File inputs cannot be pre-filled
-    img.value = "";
+    document.getElementById("addBtn").style.display = "inline-block";
+    document.getElementById("editBtn").style.display = "none";
 
     modal.style.display = "flex";
 }
 
+// === Add Cat (POST) ===
+function addCat() {
+    const cat = {
+        name: nameInput.value,
+        tag: tagInput.value,
+        description: descriptionInput.value,
+        IMG: imgInput.value
+    };
+
+    fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(cat)
+    })
+        .then(() => {
+            closeModal();
+            loadCats();
+        });
+}
+
+// === Update Cat (PUT) ===
+function updateCat() {
+    if (editingId === null) return;
+
+    const cat = {
+        name: nameInput.value,
+        tag: tagInput.value,
+        description: descriptionInput.value,
+        IMG: imgInput.value
+    };
+
+    fetch(`${API_URL}/${editingId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(cat)
+    })
+        .then(() => {
+            closeModal();
+            loadCats();
+        });
+}
+
+// === Delete Cat ===
+function deleteCat(id) {
+    if (!confirm("Delete this cat?")) return;
+
+    fetch(`${API_URL}/${id}`, {
+        method: "DELETE"
+    }).then(() => loadCats());
+}
+
+// === Edit Cat ===
+function editCat(id) {
+    const cat = catsData.find(c => c.id === id);
+    if (!cat) return;
+
+    editingId = id;
+
+    nameInput.value = cat.name;
+    tagInput.value = cat.tag;
+    descriptionInput.value = cat.description;
+    imgInput.value = cat.IMG || "";
+
+    document.getElementById("addBtn").style.display = "none";
+    document.getElementById("editBtn").style.display = "inline-block";
+
+    modal.style.display = "flex";
+}
+
+// === Render Gallery ===
+function renderGallery(cats) {
+    gallery.innerHTML = "";
+
+    cats.forEach(cat => {
+        const div = document.createElement("div");
+        div.className = "card";
+        div.innerHTML = `
+            <img src="${cat.IMG}" alt="${cat.name}" />
+            <h3>${cat.name}</h3>
+            <p>${cat.description}</p>
+            <span>${cat.tag}</span>
+            <div class="actions">
+                <button onclick="editCat(${cat.id})">Edit</button>
+                <button onclick="deleteCat(${cat.id})">Delete</button>
+            </div>
+        `;
+        gallery.appendChild(div);
+    });
+}
+
+// === Save Button ===
+function saveCat() {
+    if (editingId === null) {
+        addCat();
+    } else {
+        updateCat();
+    }
+}
+const searchInput = document.getElementById("searchInput");
+
+// Event listener لكل مرة كيتبدّل value ديال البحث
+searchInput.addEventListener("input", () => {
+    const query = searchInput.value.toLowerCase();
+
+    // فلترة catsData حسب الاسم أو tag أو description
+    const filteredCats = catsData.filter(cat =>
+        cat.name.toLowerCase().includes(query) ||
+        cat.tag.toLowerCase().includes(query) ||
+        cat.description.toLowerCase().includes(query)
+    );
+
+    renderGallery(filteredCats);
+});
+
+
+// === Close Modal ===
 function closeModal() {
     modal.style.display = "none";
     editingId = null;
 }
 
-
-// Add cat
-function addCat() {
-    const cat = {
-        name: name.value,
-        tag: tag.value,
-        description: description.value,
-        IMG: img.value // match your DB column
-    };
-
-    fetch("http://localhost:5000/cats", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(cat)
-    })
-        .then(res => res.json())
-        .then(data => {
-            console.log("Cat added:", data);
-            closeModal();
-            location.reload(); // refresh gallery
-        })
-        .catch(err => console.error(err));
-}
-
-//delete cat
-
-function deleteCat(id) {
-    if (!confirm("Delete this cat?")) return;
-
-
-    fetch(`${API_URL}/${id}`, {
-        method: "DELETE"
-    }).then(() => location.reload());
-
-}
-function editCat(id) {
-    console.log("EDIT CLICKED, ID =", id);
-}
-
-// New function to open the modal for adding a cat
-function openAddModal() {
-    // Clear input fields
-    name.value = "";
-    tag.value = "";
-    description.value = "";
-    img.value = "";
-    // Reset editing state
-    editingId = null;
-    // Show modal
-    modal.style.display = "flex";
-}
-
-// Attach event listener to Add Cat button
-document.getElementById('addCatBtn').addEventListener('click', openAddModal);
+// === Event Listener Add Cat Button ===
+document.getElementById("addCatBtn").addEventListener("click", openAddModal);

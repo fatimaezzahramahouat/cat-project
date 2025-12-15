@@ -102,24 +102,23 @@ app.post("/cats", (req, res) => {
 });
 
 // Update a record
+
 app.put("/cats/:id", (req, res) => {
+    const id = req.params.id;
+    const { name, tag, description, IMG } = req.body;
+
     pool.getConnection((err, connection) => {
-        if (err) {
-            console.error("DB connection error:", err);
-            return res.status(500).json({ error: "DB connection error" });
-        }
-        const { id, name, tag, description, img } = req.body
-        connection.query("UPDATE cats SET name = ? WHERE id = ?", [name, id], (qErr, rows) => {
+        if (err) return res.status(500).json({ error: "DB connection error" });
+
+        const sql = "UPDATE cats SET name = ?, tag = ?, description = ?, IMG = ? WHERE id = ?";
+        connection.query(sql, [name, tag, description, IMG, id], (qErr, rows) => {
             connection.release();
-            if (qErr) {
-                console.error("Query error:", qErr);
-                return res.status(500).json({ error: "Query error" });
-            }
-            res.json({ message: `Record Num : ${id} of ${name} updated successfully` });
+            if (qErr) return res.status(500).json({ error: "Query error" });
+            res.json({ message: `Cat ${id} updated successfully` });
         });
-        console.log(req.body)
     });
 });
+
 
 // List on the Port 
 app.listen(port, () => {

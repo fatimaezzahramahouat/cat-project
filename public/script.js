@@ -81,7 +81,6 @@ function updateCat() {
 
 // === Delete Cat ===
 function deleteCat(id) {
-    if (!confirm("Delete this cat?")) return;
 
     fetch(`${API_URL}/${id}`, {
         method: "DELETE"

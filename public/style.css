@@ -3,9 +3,52 @@
     cursor: pointer;
 }
 
-.h1 {
+
+header h1 {
+    font-family: 'Helvetica', sans-serif;
+    font-size: 40px;
+    color: #ff6600;
     text-align: center;
+    text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+    margin: 15px 0;
 }
+
+#addCatBtn {
+    float: right;
+    /* يخليه على اليمين */
+    margin: 10px;
+    /* مسافة من الحواف */
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 16px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    /* يخلي العنوان على اليسار والزر على اليمين */
+    align-items: center;
+    padding: 10px 20px;
+}
+
+
+
+
+
+#addCatBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.3);
+    background-color: #e65c00;
+}
+
+
+
+
+
 
 .gallery {
     display: grid;

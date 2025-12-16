@@ -420,3 +420,23 @@ div#pagination.pagination {
     outline: none;
     cursor: pointer;
 }
+
+/*tag* */
+.filter-container {
+    display: inline-flex;
+    gap: 5px;
+    align-items: center;
+}
+
+#refreshTagsBtn {
+    padding: 5px 10px;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#refreshTagsBtn:hover {
+    background: #45a049;
+}

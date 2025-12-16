@@ -23,6 +23,8 @@ function loadCats() {
 }
 loadCats();
 
+
+
 // === Open modal to add new cat ===
 function openAddModal() {
     nameInput.value = "";
@@ -179,6 +181,31 @@ function renderPagination(totalItems) {
     }
 }
 
+function fetchTags() {
+    fetch('/tag')
+        .then(res => res.json())
+        .then(tags => {
+            const tagFilter = document.getElementById('tag-filter');
+            // Keep the first option (Tous les tags)
+            const defaultOption = tagFilter.firstElementChild;
+            tagFilter.innerHTML = '';
+            tagFilter.appendChild(defaultOption);
+
+            if (Array.isArray(tags)) {
+                tags.forEach(tag => {
+                    const option = document.createElement('option');
+                    option.value = tag;
+                    option.textContent = tag.charAt(0).toUpperCase() + tag.slice(1); // Capitalize
+                    tagFilter.appendChild(option);
+                });
+            }
+        })
+        .catch(err => console.error('Error fetching tags:', err));
+}
+
+
+
+
 // === Close Modal ===
 function closeModal() {
     modal.style.display = "none";
@@ -186,22 +213,6 @@ function closeModal() {
 }
 
 
-//tags
-function fillTags(cats) {
-    const tagFilter = document.getElementById("tagFilter");
-
-    tagFilter.innerHTML = `<option value="">All tags</option>`;
-
-    //tags unique
-    const uniqueTags = [...new Set(cats.map(cat => cat.tag))];
-
-    uniqueTags.forEach(tag => {
-        const option = document.createElement("option");
-        option.value = tag;
-        option.textContent = tag;
-        tagFilter.appendChild(option);
-    });
-}
 
 
 // === Event Listener Add Cat Button ===

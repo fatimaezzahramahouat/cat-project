@@ -119,7 +119,26 @@ app.put("/cats/:id", (req, res) => {
     });
 });
 
-
+// tags
+// server.js - Improved tag route
+app.get("/tags", (req, res) => {
+    pool.getConnection((err, connection) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).json({ error: "DB connection error" });
+        }
+        connection.query("SELECT DISTINCT tag FROM cats WHERE tag IS NOT NULL AND tag != ''", (err, rows) => {
+            connection.release();
+            if (err) {
+                console.error(err);
+                return res.status(500).json({ error: "DB query error" });
+            }
+            // Return just an array of tag strings
+            const tags = rows.map(row => row.tag);
+            res.json(tags);
+        });
+    });
+});
 // List on the Port 
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);

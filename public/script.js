@@ -81,7 +81,6 @@ function updateCat() {
 
 // === Delete Cat ===
 function deleteCat(id) {
-
     fetch(`${API_URL}/${id}`, {
         method: "DELETE"
     }).then(() => loadCats());
@@ -185,6 +184,25 @@ function closeModal() {
     modal.style.display = "none";
     editingId = null;
 }
+
+
+//tags
+function fillTags(cats) {
+    const tagFilter = document.getElementById("tagFilter");
+
+    tagFilter.innerHTML = `<option value="">All tags</option>`;
+
+    //tags unique
+    const uniqueTags = [...new Set(cats.map(cat => cat.tag))];
+
+    uniqueTags.forEach(tag => {
+        const option = document.createElement("option");
+        option.value = tag;
+        option.textContent = tag;
+        tagFilter.appendChild(option);
+    });
+}
+
 
 // === Event Listener Add Cat Button ===
 document.getElementById("addCatBtn").addEventListener("click", openAddModal);

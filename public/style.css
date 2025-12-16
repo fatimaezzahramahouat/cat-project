@@ -358,6 +358,11 @@ header {
     padding: 5px 10px;
     border: none;
     cursor: pointer;
+
+}
+
+div#pagination.pagination {
+    text-align: center;
 }
 
 .pagination button.active {
@@ -404,4 +409,14 @@ header {
 /* Active (click) */
 .card .actions button:active {
     transform: scale(0.96);
+}
+
+
+/* Tag selector */
+#tagFilter {
+    padding: 8px 12px;
+    border-radius: 20px;
+    border: 1px solid #ccc;
+    outline: none;
+    cursor: pointer;
 }

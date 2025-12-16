@@ -120,21 +120,44 @@ app.put("/cats/:id", (req, res) => {
 });
 
 // tags
-// server.js - Improved tag route
+// server.js - Enhanced with better error handling
 app.get("/tags", (req, res) => {
     pool.getConnection((err, connection) => {
         if (err) {
-            console.error(err);
-            return res.status(500).json({ error: "DB connection error" });
+            console.error("Database connection error:", err);
+            return res.status(500).json({
+                error: "Database connection failed",
+                details: err.message
+            });
         }
-        connection.query("SELECT DISTINCT tag FROM cats WHERE tag IS NOT NULL AND tag != ''", (err, rows) => {
+
+        // Improved query with trimming and sorting
+        const query = `
+            SELECT DISTINCT TRIM(tag) as tag 
+            FROM cats 
+            WHERE tag IS NOT NULL 
+            AND tag != '' 
+            AND TRIM(tag) != ''
+            ORDER BY LOWER(tag) ASC
+        `;
+
+        connection.query(query, (err, rows) => {
             connection.release();
+
             if (err) {
-                console.error(err);
-                return res.status(500).json({ error: "DB query error" });
+                console.error("Database query error:", err);
+                return res.status(500).json({
+                    error: "Failed to fetch tags",
+                    details: err.message
+                });
             }
-            // Return just an array of tag strings
-            const tags = rows.map(row => row.tag);
+
+            // Extract tags and remove any remaining empty strings
+            const tags = rows
+                .map(row => row.tag)
+                .filter(tag => tag && tag.trim().length > 0);
+
+            console.log(`✅ Returning ${tags.length} unique tags`);
             res.json(tags);
         });
     });

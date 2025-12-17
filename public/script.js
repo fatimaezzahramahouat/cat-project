@@ -410,7 +410,6 @@ function updateCat() {
 }
 
 function deleteCat(id) {
-    if (!confirm("Are you sure you want to delete this cat?")) return;
 
     fetch(`${API_URL}/${id}`, {
         method: "DELETE"
@@ -487,3 +486,6 @@ function debugApp() {
 
 // Make debug function available globally
 window.debugApp = debugApp;
+
+
+//authentification

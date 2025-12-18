@@ -13,6 +13,6 @@
         }
     ],
     "site": {
-        "bucket": "public"
+        "bucket": "./public"
     }
 }

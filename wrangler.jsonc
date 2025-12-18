@@ -12,7 +12,7 @@
             "database_id": "4a03361c-2fb8-4b76-895b-0d33eef7c183"
         }
     ],
-    "site": {
-        "bucket": "./public"
+    "assets": {
+        "directory": "./public"
     }
 }

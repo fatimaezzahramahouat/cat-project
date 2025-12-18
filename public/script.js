@@ -1,4 +1,8 @@
-const API_URL = "http://localhost:5000/cats";
+// ============ API CONFIGURATION ============
+// Use relative URL for your Cloudflare Worker
+const API_URL = "/cats";  // Changed from http://localhost:5000/cats
+
+// ============ DOM ELEMENTS ============
 const gallery = document.getElementById("catGallery");
 const modal = document.getElementById("catModal");
 let editingId = null;
@@ -18,35 +22,66 @@ const tagFilter = document.getElementById("tag-filter");
 // ============ INITIALIZATION ============
 document.addEventListener('DOMContentLoaded', function () {
     console.log("📄 DOM loaded, initializing Cat Gallery...");
+    console.log("🌐 API URL:", API_URL);
+
+    // Test API connection immediately
+    testAPI();
+
     loadCats();
     fetchTags();
     setupEventListeners();
 });
 
-// ============ LOAD CATS ============
-function loadCats() {
-    console.log("🐱 Loading cats from API...");
-    fetch(API_URL)
+// ============ TEST API CONNECTION ============
+function testAPI() {
+    console.log("🔌 Testing API connection...");
+    fetch('/cats')
         .then(res => {
+            console.log("API Response status:", res.status);
             if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
             return res.json();
         })
         .then(data => {
-            catsData = data;
+            console.log("✅ API connection successful!");
+            console.log("First cat:", data[0]);
+        })
+        .catch(err => {
+            console.error('❌ API connection failed:', err);
+            showNotification('⚠️ Cannot connect to API. Make sure the Worker is deployed.', 'error');
+        });
+}
+
+// ============ LOAD CATS ============
+function loadCats() {
+    console.log("🐱 Loading cats from API:", API_URL);
+    showLoading();
+
+    fetch(API_URL)
+        .then(res => {
+            console.log("Load cats response:", res.status, res.statusText);
+            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+            return res.json();
+        })
+        .then(data => {
+            catsData = Array.isArray(data) ? data : [];
             console.log(`✅ Loaded ${catsData.length} cats`);
+            hideLoading();
             renderGallery(catsData);
         })
         .catch(err => {
             console.error('❌ Error loading cats:', err);
-            showError('Failed to load cats. Please refresh the page.');
+            hideLoading();
+            showError('Failed to load cats. Please check if the Worker is running.');
         });
 }
 
 // ============ FETCH TAGS ============
 function fetchTags() {
-    console.log("🔄 Fetching tags...");
+    console.log("🔄 Fetching tags from /tags...");
+
     fetch('/tags')
         .then(res => {
+            console.log("Tags response:", res.status);
             if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
             return res.json();
         })
@@ -193,7 +228,10 @@ function setupSearch() {
 
 // ============ RENDER GALLERY ============
 function renderGallery(cats) {
-    if (!gallery) return;
+    if (!gallery) {
+        console.error("❌ Gallery element not found!");
+        return;
+    }
 
     gallery.innerHTML = "";
 
@@ -214,13 +252,13 @@ function renderGallery(cats) {
         const div = document.createElement("div");
         div.className = "card";
         div.innerHTML = `
-            ${cat.IMG ? `<img src="${cat.IMG}" alt="${cat.name}" />` : '<div class="no-image">No Image</div>'}
-            <h3>${cat.name || 'Unnamed Cat'}</h3>
-            <p>${cat.description || 'No description available'}</p>
-            <span class="tag-badge">${cat.tag || 'No tag'}</span>
+            ${cat.IMG ? `<img src="${cat.IMG}" alt="${cat.name}" loading="lazy" />` : '<div class="no-image">No Image</div>'}
+            <h3>${escapeHTML(cat.name) || 'Unnamed Cat'}</h3>
+            <p>${escapeHTML(cat.description) || 'No description available'}</p>
+            <span class="tag-badge">${escapeHTML(cat.tag) || 'No tag'}</span>
             <div class="actions">
-                <button onclick="editCat(${cat.id})">Edit</button>
-                <button onclick="deleteCat(${cat.id})">Delete</button>
+                <button onclick="editCat(${cat.id})" class="btn-edit">Edit</button>
+                <button onclick="deleteCat(${cat.id})" class="btn-delete">Delete</button>
             </div>
         `;
         gallery.appendChild(div);
@@ -292,13 +330,13 @@ function renderGalleryForPage(cats) {
         const div = document.createElement("div");
         div.className = "card";
         div.innerHTML = `
-            ${cat.IMG ? `<img src="${cat.IMG}" alt="${cat.name}" />` : '<div class="no-image">No Image</div>'}
-            <h3>${cat.name || 'Unnamed Cat'}</h3>
-            <p>${cat.description || 'No description available'}</p>
-            <span class="tag-badge">${cat.tag || 'No tag'}</span>
+            ${cat.IMG ? `<img src="${cat.IMG}" alt="${cat.name}" loading="lazy" />` : '<div class="no-image">No Image</div>'}
+            <h3>${escapeHTML(cat.name) || 'Unnamed Cat'}</h3>
+            <p>${escapeHTML(cat.description) || 'No description available'}</p>
+            <span class="tag-badge">${escapeHTML(cat.tag) || 'No tag'}</span>
             <div class="actions">
-                <button onclick="editCat(${cat.id})">Edit</button>
-                <button onclick="deleteCat(${cat.id})">Delete</button>
+                <button onclick="editCat(${cat.id})" class="btn-edit">Edit</button>
+                <button onclick="deleteCat(${cat.id})" class="btn-delete">Delete</button>
             </div>
         `;
         gallery.appendChild(div);
@@ -333,9 +371,11 @@ function addCat() {
     };
 
     if (!cat.name || !cat.name.trim()) {
-        alert("Please enter a cat name");
+        showNotification('⚠️ Please enter a cat name', 'warning');
         return;
     }
+
+    showNotification('Adding cat...', 'info');
 
     fetch(API_URL, {
         method: "POST",
@@ -343,23 +383,29 @@ function addCat() {
         body: JSON.stringify(cat)
     })
         .then(res => {
+            console.log("Add cat response:", res.status);
             if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
             return res.json();
         })
-        .then(() => {
+        .then(data => {
+            console.log("✅ Cat added:", data);
+            showNotification('✅ Cat added successfully!', 'success');
             closeModal();
             loadCats();
             fetchTags(); // Refresh tags after adding new cat
         })
         .catch(err => {
             console.error('❌ Error adding cat:', err);
-            alert('Failed to add cat. Please try again.');
+            showNotification('❌ Failed to add cat. Please try again.', 'error');
         });
 }
 
 function editCat(id) {
     const cat = catsData.find(c => c.id === id);
-    if (!cat) return;
+    if (!cat) {
+        showNotification('Cat not found', 'error');
+        return;
+    }
 
     editingId = id;
 
@@ -385,9 +431,11 @@ function updateCat() {
     };
 
     if (!cat.name || !cat.name.trim()) {
-        alert("Please enter a cat name");
+        showNotification('⚠️ Please enter a cat name', 'warning');
         return;
     }
+
+    showNotification('Updating cat...', 'info');
 
     fetch(`${API_URL}/${editingId}`, {
         method: "PUT",
@@ -395,36 +443,45 @@ function updateCat() {
         body: JSON.stringify(cat)
     })
         .then(res => {
+            console.log("Update cat response:", res.status);
             if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
             return res.json();
         })
-        .then(() => {
+        .then(data => {
+            console.log("✅ Cat updated:", data);
+            showNotification('✅ Cat updated successfully!', 'success');
             closeModal();
             loadCats();
             fetchTags(); // Refresh tags after updating
         })
         .catch(err => {
             console.error('❌ Error updating cat:', err);
-            alert('Failed to update cat. Please try again.');
+            showNotification('❌ Failed to update cat. Please try again.', 'error');
         });
 }
 
 function deleteCat(id) {
+    if (!confirm('Are you sure you want to delete this cat?')) return;
+
+    showNotification('Deleting cat...', 'info');
 
     fetch(`${API_URL}/${id}`, {
         method: "DELETE"
     })
         .then(res => {
+            console.log("Delete cat response:", res.status);
             if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
             return res.json();
         })
-        .then(() => {
+        .then(data => {
+            console.log("✅ Cat deleted:", data);
+            showNotification('✅ Cat deleted successfully!', 'success');
             loadCats();
             fetchTags(); // Refresh tags after deletion
         })
         .catch(err => {
             console.error('❌ Error deleting cat:', err);
-            alert('Failed to delete cat. Please try again.');
+            showNotification('❌ Failed to delete cat. Please try again.', 'error');
         });
 }
 
@@ -471,22 +528,112 @@ function showError(message) {
     console.error("❌ Error:", message);
 }
 
+function showLoading() {
+    if (gallery) {
+        gallery.innerHTML = '<div class="loading">Loading cats...</div>';
+    }
+}
+
+function hideLoading() {
+    // Loading state is removed when renderGallery is called
+}
+
+function showNotification(message, type = 'info') {
+    // Remove existing notification
+    const existing = document.querySelector('.notification');
+    if (existing) existing.remove();
+
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.innerHTML = `
+        <span>${message}</span>
+        <button onclick="this.parentElement.remove()">×</button>
+    `;
+
+    // Add CSS if not already present
+    if (!document.querySelector('#notification-styles')) {
+        const style = document.createElement('style');
+        style.id = 'notification-styles';
+        style.textContent = `
+            .notification {
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 15px 20px;
+                border-radius: 8px;
+                color: white;
+                z-index: 1000;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                min-width: 300px;
+                max-width: 500px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                animation: slideIn 0.3s ease;
+            }
+            .notification-info { background: #3498db; }
+            .notification-success { background: #2ecc71; }
+            .notification-warning { background: #f39c12; }
+            .notification-error { background: #e74c3c; }
+            .notification button {
+                background: none;
+                border: none;
+                color: white;
+                font-size: 20px;
+                cursor: pointer;
+                margin-left: 15px;
+            }
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    document.body.appendChild(notification);
+
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        if (notification.parentElement) {
+            notification.remove();
+        }
+    }, 5000);
+}
+
+function escapeHTML(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 // Debug function
 function debugApp() {
     console.log("=== 🐛 DEBUG INFO ===");
+    console.log("API URL:", API_URL);
     console.log("Cats data:", catsData);
+    console.log("Cats count:", catsData.length);
     console.log("Current tag filter:", currentTagFilter);
     console.log("Current page:", currentPage);
 
-    const tagFilter = document.getElementById('tag-filter');
-    if (tagFilter) {
-        console.log("Tag filter options:", Array.from(tagFilter.options).map(opt => opt.value));
-    }
+    // Test API
+    fetch(API_URL)
+        .then(res => console.log("Current API status:", res.status))
+        .catch(err => console.log("API error:", err.message));
 }
 
 // Make debug function available globally
 window.debugApp = debugApp;
+window.clearFilter = clearFilter;
+window.editCat = editCat;
+window.deleteCat = deleteCat;
+window.openAddModal = openAddModal;
+window.closeModal = closeModal;
+window.addCat = addCat;
+window.updateCat = updateCat;
+window.filterCatsByTag = filterCatsByTag;
 
-
-//authentification
-
+// Initialize debug
+console.log("🐱 Cat Gallery Script Loaded");
+console.log("🌐 API Endpoint:", API_URL);

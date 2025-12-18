@@ -1,0 +1,18 @@
+{
+    "name": "new-project",
+    "main": "app.js", // <-- your worker entry point
+    "compatibility_date": "2025-12-18",
+    "compatibility_flags": [
+        "nodejs_compat"
+    ],
+    "d1_databases": [
+        {
+            "binding": "DB",
+            "database_name": "nodejsp",
+            "database_id": "4a03361c-2fb8-4b76-895b-0d33eef7c183"
+        }
+    ],
+    "site": {
+        "bucket": "public" // <-- static frontend files
+    }
+}

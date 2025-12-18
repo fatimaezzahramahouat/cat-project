@@ -1,24 +1,12 @@
 {
   "name": "new-project",
   "version": "1.0.0",
-  "description": "",
-  "license": "ISC",
-  "author": "",
-  "type": "commonjs",
-  "main": "index.js",
+  "private": true,
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node app.js",
-    "dev": "nodemon app.js"
-  },
-  "dependencies": {
-    "body-parser": "^2.2.1",
-    "cors": "^2.8.5",
-    "express": "^5.2.1",
-    "mysql": "^2.18.1",
-    "mysql2": "^3.15.3"
+    "deploy": "wrangler deploy"
   },
   "devDependencies": {
-    "nodemon": "^3.1.11"
+    "wrangler": "^4.56.0"
   }
 }

@@ -1,183 +1,68 @@
-const express = require("express");
-const bodyParser = require("body-parser");
-const mysql = require("mysql2");
+export default {
+    async fetch(request, env) {
+        const url = new URL(request.url);
+        const pathname = url.pathname;
+        const method = request.method;
 
-const app = express();
-const port = process.env.PORT || 5000;
-
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
-
-app.use(express.static("public"));
-
-// == Mysql ==
-const pool = mysql.createPool({
-    host: "localhost",
-    user: "root",
-    password: "",
-    database: "nodejsp",
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0,
-});
-
-// Get cats
-app.get("/cats", (req, res) => {
-    pool.getConnection((err, connection) => {
-        if (err) {
-            console.error("DB connection error:", err);
-            return res.status(500).json({ error: "DB connection error" });
-        }
-        connection.query("SELECT * FROM cats", (qErr, rows) => {
-            connection.release();
-            if (qErr) {
-                console.error("Query error:", qErr);
-                return res.status(500).json({ error: "Query error" });
-            }
-            res.json(rows);
-        });
-    });
-});
-
-// Get cats by id
-app.get("/cats/:id", (req, res) => {
-    pool.getConnection((err, connection) => {
-        if (err) {
-            console.error("DB connection error:", err);
-            return res.status(500).json({ error: "DB connection error" });
-        }
-        connection.query("SELECT * FROM cats where id = ?", [req.params.id], (qErr, rows) => {
-            // const sql = "SELECT * FROM cats WHERE id = " + req.params.id;
-            // SELECT * FROM cats WHERE id = '5; DROP TABLE cats;'
-            connection.release();
-            if (qErr) {
-                console.error("Query error:", qErr);
-                return res.status(500).json({ error: "Query error" });
-            }
-            res.json(rows);
-        });
-    });
-});
-
-// Delete a record
-app.delete("/cats/:id", (req, res) => {
-    pool.getConnection((err, connection) => {
-        if (err) {
-            console.error("DB connection error:", err);
-            return res.status(500).json({ error: "DB connection error" });
-        }
-        connection.query("DELETE FROM cats where id = ?", [req.params.id], (qErr, rows) => {
-            connection.release();
-            if (qErr) {
-                console.error("Query error:", qErr);
-                return res.status(500).json({ error: "Query error" });
-            }
-            res.json({ message: `Record Num : ${req.params.id} deleted successfully` });
-        });
-    });
-});
-
-
-// Add a record
-app.post("/cats", (req, res) => {
-    pool.getConnection((err, connection) => {
-        if (err) {
-            console.error("DB connection error:", err);
-            return res.status(500).json({ error: "DB connection error" });
-        }
-        const params = req.body
-        connection.query("INSERT INTO cats SET ?", params, (qErr, rows) => {
-            // connection.query("INSERT INTO cats (name, age, color) VALUES (?, ?, ?)",
-            // [req.body.name, req.body.age, req.body.color],
-            connection.release();
-            if (qErr) {
-                console.error("Query error:", qErr);
-                return res.status(500).json({ error: "Query error" });
-            }
-            res.json({ message: `Record of ${params.name} added successfully` });
-        });
-
-        console.log(params)
-    });
-});
-
-// Update a record
-
-app.put("/cats/:id", (req, res) => {
-    const id = req.params.id;
-    const { name, tag, description, IMG } = req.body;
-
-    pool.getConnection((err, connection) => {
-        if (err) return res.status(500).json({ error: "DB connection error" });
-
-        const sql = "UPDATE cats SET name = ?, tag = ?, description = ?, IMG = ? WHERE id = ?";
-        connection.query(sql, [name, tag, description, IMG, id], (qErr, rows) => {
-            connection.release();
-            if (qErr) return res.status(500).json({ error: "Query error" });
-            res.json({ message: `Cat ${id} updated successfully` });
-        });
-    });
-});
-
-// tags
-// server.js - Enhanced with better error handling
-app.get("/tags", (req, res) => {
-    pool.getConnection((err, connection) => {
-        if (err) {
-            console.error("Database connection error:", err);
-            return res.status(500).json({
-                error: "Database connection failed",
-                details: err.message
-            });
+        // ===== GET ALL CATS =====
+        if (pathname === "/cats" && method === "GET") {
+            const { results } = await env.DB.prepare("SELECT * FROM cats").all();
+            return Response.json(results);
         }
 
-        // Improved query with trimming and sorting
-        const query = `
-            SELECT DISTINCT TRIM(tag) as tag 
-            FROM cats 
-            WHERE tag IS NOT NULL 
-            AND tag != '' 
-            AND TRIM(tag) != ''
-            ORDER BY LOWER(tag) ASC
-        `;
+        // ===== GET CAT BY ID =====
+        if (pathname.startsWith("/cats/") && method === "GET") {
+            const id = pathname.split("/")[2];
+            const { results } = await env.DB
+                .prepare("SELECT * FROM cats WHERE id=?")
+                .bind(id)
+                .all();
+            return Response.json(results);
+        }
 
-        connection.query(query, (err, rows) => {
-            connection.release();
+        // ===== DELETE A RECORD =====
+        if (pathname.startsWith("/cats/") && method === "DELETE") {
+            const id = pathname.split("/")[2];
+            await env.DB.prepare("DELETE FROM cats WHERE id=?").bind(id).run();
+            return Response.json({ message: `Record Num : ${id} deleted successfully` });
+        }
 
-            if (err) {
-                console.error("Database query error:", err);
-                return res.status(500).json({
-                    error: "Failed to fetch tags",
-                    details: err.message
-                });
-            }
+        // ===== ADD A RECORD =====
+        if (pathname === "/cats" && method === "POST") {
+            const params = await request.json();
+            await env.DB
+                .prepare("INSERT INTO cats (name, tag, description, IMG) VALUES (?, ?, ?, ?)")
+                .bind(params.name, params.tag, params.description, params.IMG)
+                .run();
+            console.log(params);
+            return Response.json({ message: `Record of ${params.name} added successfully` });
+        }
 
-            // Extract tags and remove any remaining empty strings
-            const tags = rows
-                .map(row => row.tag)
-                .filter(tag => tag && tag.trim().length > 0);
+        // ===== UPDATE A RECORD =====
+        if (pathname.startsWith("/cats/") && method === "PUT") {
+            const id = pathname.split("/")[2];
+            const { name, tag, description, IMG } = await request.json();
+            await env.DB
+                .prepare("UPDATE cats SET name=?, tag=?, description=?, IMG=? WHERE id=?")
+                .bind(name, tag, description, IMG, id)
+                .run();
+            return Response.json({ message: `Cat ${id} updated successfully` });
+        }
 
+        // ===== GET TAGS =====
+        if (pathname === "/tags" && method === "GET") {
+            const { results } = await env.DB.prepare(`
+        SELECT DISTINCT TRIM(tag) AS tag
+        FROM cats
+        WHERE tag IS NOT NULL AND tag != '' AND TRIM(tag) != ''
+        ORDER BY LOWER(tag) ASC
+      `).all();
+
+            const tags = results.map(r => r.tag);
             console.log(`✅ Returning ${tags.length} unique tags`);
-            res.json(tags);
-        });
-    });
-});
+            return Response.json(tags);
+        }
 
-
-
-
-
-
-
-
-
-//auth
-
-
-
-
-
-// List on the Port 
-app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
-}); 
+        return new Response("Not Found", { status: 404 });
+    }
+};

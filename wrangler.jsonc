@@ -1,5 +1,5 @@
 {
-    "name": "new-project",
+    "name": "cat-project",
     "main": "app.js", // <-- your worker entry point
     "compatibility_date": "2025-12-18",
     "compatibility_flags": [

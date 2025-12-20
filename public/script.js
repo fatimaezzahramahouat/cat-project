@@ -709,7 +709,119 @@ document.addEventListener('DOMContentLoaded', function () {
 
 //login page
 
+// ============ SIGNUP FORM HANDLER ============
+async function handleSignup(e) {
+    e.preventDefault();
+    console.log("📝 Handling signup...");
 
+    const username = document.getElementById('signup-username').value;
+    const email = document.getElementById('signup-email').value;
+    const password = document.getElementById('signup-password').value;
+    const confirmPassword = document.getElementById('signup-confirm-password').value;
+
+    // Validation
+    if (!username || !email || !password || !confirmPassword) {
+        showNotification('All fields are required', 'error');
+        return;
+    }
+
+    if (password.length < 6) {
+        showNotification('Password must be at least 6 characters', 'error');
+        return;
+    }
+
+    if (password !== confirmPassword) {
+        showNotification('Passwords do not match', 'error');
+        return;
+    }
+
+    // Show loading state
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Account...';
+    submitBtn.disabled = true;
+
+    try {
+        console.log("📤 Sending signup request...");
+
+        const response = await fetch('/auth/register', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                username: username.trim(),
+                email: email.trim(),
+                password: password
+            })
+        });
+
+        const data = await response.json();
+        console.log("📥 Signup response:", data);
+
+        if (response.ok) {
+            // Save user to localStorage
+            currentUser = data.user;
+            authToken = data.token;
+            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            localStorage.setItem('authToken', authToken);
+
+            showNotification('✅ Account created successfully!', 'success');
+            closeSignupModal();
+
+            // Update UI
+            updateAuthUI();
+
+            // Show dashboard
+            showDashboard();
+
+        } else {
+            showNotification(data.error || 'Signup failed', 'error');
+        }
+    } catch (error) {
+        console.error('❌ Signup error:', error);
+        showNotification('Error during signup. Please try again.', 'error');
+    } finally {
+        // Reset button state
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    }
+}
+// Signup form submission
+const signupForm = document.getElementById('signup-form');
+if (signupForm) {
+    signupForm.addEventListener('submit', handleSignup);
+}
+
+// Signup button click
+const signupBtn = document.querySelector('.signup-btn');
+if (signupBtn) {
+    signupBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        console.log("📝 Signup button clicked");
+        showSignupModal();
+    });
+}
+// Show signup modal
+function showSignupModal() {
+    console.log("🔄 Showing signup modal");
+    closeAllModals();
+    document.getElementById('signup-modal').style.display = 'flex';
+}
+
+// Close signup modal
+function closeSignupModal() {
+    document.getElementById('signup-modal').style.display = 'none';
+    const form = document.getElementById('signup-form');
+    if (form) form.reset();
+}
+
+// Close all modals
+function closeAllModals() {
+    closeModal();
+    closeLoginModal();
+    closeSignupModal();
+}
 
 
 // Make debug function available globally

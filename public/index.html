@@ -31,20 +31,15 @@
                 <li><a href="#contact" class="cyber-nav-link"><i class="fas fa-envelope"></i> CONTACT</a></li>
             </ul>
 
-            <!-- Login/Signup -->
+            <!-- Login/Signup - This gets updated by JavaScript -->
             <div class="cyber-auth">
-                <a href="#login" class="cyber-btn login-btn">
+                <button class="cyber-btn login-btn">
                     <i class="fas fa-sign-in-alt"></i> LOGIN
-                </a>
-                <a href="#signup" class="cyber-btn signup-btn">
+                </button>
+                <button class="cyber-btn signup-btn">
                     <i class="fas fa-user-plus"></i> SIGN UP
-                </a>
-
+                </button>
             </div>
-
-
-
-
         </div>
     </nav>
 
@@ -76,7 +71,7 @@
                     </select>
                 </div>
 
-                <button id="addCatBtn" class="cyber-btn primary">
+                <button id="addCatBtn" class="cyber-btn primary" style="display: none;">
                     <i class="fas fa-plus"></i> ADD CAT
                 </button>
             </div>
@@ -98,6 +93,67 @@
 
             <!-- Pagination -->
             <div id="pagination" class="pagination"></div>
+        </section>
+
+        <!-- Dashboard Section (Shown only when logged in) -->
+        <section id="dashboard" class="cyber-section" style="display: none;">
+            <div class="terminal-header">
+                <h1><i class="fas fa-terminal"></i> USER DASHBOARD</h1>
+                <p>Welcome back, <span id="dashboard-username">User</span>!</p>
+                <div class="terminal-status">
+                    <span class="status-dot online"></span>
+                    USER SESSION ACTIVE
+                </div>
+            </div>
+
+            <!-- User Stats -->
+            <div class="dashboard-stats">
+                <div class="stat-card">
+                    <i class="fas fa-cat"></i>
+                    <h3>MY CATS</h3>
+                    <span id="my-cat-count">0</span>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-calendar"></i>
+                    <h3>MEMBER SINCE</h3>
+                    <span id="member-since">Today</span>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-star"></i>
+                    <h3>ROLE</h3>
+                    <span id="user-role">User</span>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <button class="cyber-btn primary" onclick="openAddModal()">
+                    <i class="fas fa-plus"></i> ADD NEW CAT
+                </button>
+                <button class="cyber-btn" onclick="loadMyCats()">
+                    <i class="fas fa-sync"></i> REFRESH MY CATS
+                </button>
+            </div>
+
+            <!-- My Cats Section -->
+            <div class="dashboard-section">
+                <h2><i class="fas fa-paw"></i> MY CATS</h2>
+                <div class="my-cats-container" id="myCatsContainer">
+                    <!-- User's cats will load here -->
+                </div>
+            </div>
+
+            <!-- Public Cats Preview -->
+            <div class="dashboard-section">
+                <h2><i class="fas fa-globe"></i> PUBLIC CAT GALLERY</h2>
+                <p>Browse all cats in the community</p>
+                <div class="public-cats-preview" id="publicCatsPreview">
+                    <!-- Public cats preview will load here -->
+                </div>
+                <button class="cyber-btn" onclick="navigateToHome()">
+                    <i class="fas fa-external-link-alt"></i> VIEW ALL CATS
+                </button>
+            </div>
         </section>
 
         <!-- About Section -->
@@ -231,20 +287,22 @@
             <div class="modal-terminal">
                 <div class="modal-header">
                     <h3><i class="fas fa-sign-in-alt"></i> SECURE LOGIN</h3>
-                    <button class="modal-close" onclick="closeLoginModal()"><i class="fas fa-times"></i></button>
+                    <button class="modal-close"><i class="fas fa-times"></i></button>
                 </div>
                 <div class="modal-content">
-                    <form class="auth-form">
+                    <form id="login-form" class="auth-form">
                         <div class="form-group">
-                            <label><i class="fas fa-user"></i> USERNAME</label>
-                            <input type="text" class="cyber-input" placeholder="ENTER USERNAME" />
+                            <label><i class="fas fa-envelope"></i> EMAIL</label>
+                            <input type="text" class="cyber-input" placeholder="ENTER EMAIL" id="login-email"
+                                required />
                         </div>
                         <div class="form-group">
                             <label><i class="fas fa-lock"></i> PASSWORD</label>
-                            <input type="password" class="cyber-input" placeholder="ENTER PASSWORD" />
+                            <input type="password" class="cyber-input" placeholder="ENTER PASSWORD" id="login-password"
+                                required />
                         </div>
                         <button type="submit" class="cyber-btn primary">LOGIN</button>
-                        <p class="auth-link">Don't have an account? <a href="#signup">Sign Up</a></p>
+                        <p class="auth-link">Don't have an account? <a href="#" class="switch-to-signup">Sign Up</a></p>
                     </form>
                 </div>
             </div>
@@ -255,49 +313,53 @@
             <div class="modal-terminal">
                 <div class="modal-header">
                     <h3><i class="fas fa-user-plus"></i> CREATE ACCOUNT</h3>
-                    <button class="modal-close" onclick="closeSignupModal()"><i class="fas fa-times"></i></button>
+                    <button class="modal-close"><i class="fas fa-times"></i></button>
                 </div>
                 <div class="modal-content">
-                    <form class="auth-form">
+                    <form id="signup-form" class="auth-form">
                         <div class="form-group">
-                            <label><i class="fas fa-user"></i> FULL NAME</label>
-                            <input type="text" class="cyber-input" placeholder="ENTER FULL NAME" />
+                            <label><i class="fas fa-user"></i> USERNAME</label>
+                            <input type="text" class="cyber-input" placeholder="ENTER USERNAME" id="signup-username"
+                                required />
                         </div>
                         <div class="form-group">
                             <label><i class="fas fa-envelope"></i> EMAIL</label>
-                            <input type="email" class="cyber-input" placeholder="ENTER EMAIL" />
+                            <input type="email" class="cyber-input" placeholder="ENTER EMAIL" id="signup-email"
+                                required />
                         </div>
                         <div class="form-group">
                             <label><i class="fas fa-lock"></i> PASSWORD</label>
-                            <input type="password" class="cyber-input" placeholder="CREATE PASSWORD" />
+                            <input type="password" class="cyber-input" placeholder="CREATE PASSWORD"
+                                id="signup-password" required />
                         </div>
                         <div class="form-group">
                             <label><i class="fas fa-lock"></i> CONFIRM PASSWORD</label>
-                            <input type="password" class="cyber-input" placeholder="CONFIRM PASSWORD" />
+                            <input type="password" class="cyber-input" placeholder="CONFIRM PASSWORD"
+                                id="signup-confirm-password" required />
                         </div>
                         <button type="submit" class="cyber-btn primary">SIGN UP</button>
-                        <p class="auth-link">Already have an account? <a href="#login">Login</a></p>
+                        <p class="auth-link">Already have an account? <a href="#" class="switch-to-login">Login</a></p>
                     </form>
                 </div>
             </div>
         </div>
 
-        <!-- Cat Modal (Same as before) -->
+        <!-- Cat Modal -->
         <div class="modal" id="catModal">
             <div class="modal-content cyber-modal-content">
-                <h2><i class="fas fa-plus-circle"></i> ADD NEW CAT</h2>
+                <h2><i class="fas fa-plus-circle"></i> <span id="modal-title">ADD NEW CAT</span></h2>
                 <input type="text" id="name" placeholder="Cat Name" />
                 <input type="text" id="tag" placeholder="Tag (cute, funny...)" />
                 <input type="text" id="img" placeholder="Image URL" />
                 <textarea id="description" placeholder="Description"></textarea>
                 <div class="modal-actions">
-                    <button id="addBtn" class="cyber-btn success" onclick="addCat()">
+                    <button id="addBtn" class="cyber-btn success">
                         <i class="fas fa-check"></i> ADD CAT
                     </button>
-                    <button id="editBtn" class="cyber-btn primary" onclick="updateCat()">
+                    <button id="editBtn" class="cyber-btn primary" style="display: none;">
                         <i class="fas fa-save"></i> SAVE CHANGES
                     </button>
-                    <button class="cyber-btn cancel" onclick="closeModal()">
+                    <button class="cyber-btn cancel">
                         <i class="fas fa-times"></i> CANCEL
                     </button>
                 </div>
@@ -313,8 +375,12 @@
                 <i class="fas fa-terminal"></i>
                 <span>cat<span class="logo-highlight">tey</span></span>
             </div>
-
-
+            <div class="footer-links">
+                <a href="#home">Home</a> |
+                <a href="#about">About</a> |
+                <a href="#contact">Contact</a>
+            </div>
+        </div>
     </footer>
 
     <script src="script.js"></script>

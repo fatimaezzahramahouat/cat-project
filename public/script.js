@@ -183,50 +183,24 @@ function logout() {
 }
 
 // ============ MODAL FUNCTIONS ============
+
 function showLoginModal() {
+    console.log("🔄 Showing login modal");
+    closeAllModals();
     document.getElementById('login-modal').style.display = 'flex';
 }
 
 function showSignupModal() {
+    console.log("🔄 Showing signup modal");
+    closeAllModals();
     document.getElementById('signup-modal').style.display = 'flex';
 }
 
-function closeLoginModal() {
-    document.getElementById('login-modal').style.display = 'none';
-    const form = document.querySelector('#login-modal .auth-form');
-    if (form) form.reset();
+function closeAllModals() {
+    closeModal();
+    closeLoginModal();
+    closeSignupModal();
 }
-
-function closeSignupModal() {
-    document.getElementById('signup-modal').style.display = 'none';
-    const form = document.querySelector('#signup-modal .auth-form');
-    if (form) form.reset();
-}
-
-function openAddModal() {
-    if (!currentUser) {
-        showNotification('Please login to add a cat', 'warning');
-        showLoginModal();
-        return;
-    }
-
-    nameInput.value = "";
-    tagInput.value = "";
-    descriptionInput.value = "";
-    imgInput.value = "";
-    editingId = null;
-
-    document.getElementById("addBtn").style.display = "inline-block";
-    document.getElementById("editBtn").style.display = "none";
-
-    modal.style.display = "flex";
-}
-
-function closeModal() {
-    modal.style.display = "none";
-    editingId = null;
-}
-
 // ============ CAT FUNCTIONS WITH AUTH ============
 async function addCat() {
     if (!currentUser) {
@@ -727,10 +701,14 @@ async function handleContact(e) {
 }
 
 // ============ EVENT LISTENERS SETUP ============
+// ============ EVENT LISTENERS SETUP ============
 function setupEventListeners() {
+    console.log("🔧 Setting up event listeners...");
+
     // Add Cat Button
     const addCatBtn = document.getElementById("addCatBtn");
     if (addCatBtn) {
+        console.log("✅ Found addCatBtn");
         addCatBtn.addEventListener("click", openAddModal);
     }
 
@@ -746,18 +724,22 @@ function setupEventListeners() {
     // Search Input
     setupSearch();
 
+    // CLOSE MODAL HANDLERS - Add these lines
+    const closeLoginBtn = document.querySelector('#login-modal .modal-close');
+    if (closeLoginBtn) {
+        closeLoginBtn.addEventListener('click', closeLoginModal);
+    }
+
+    const closeSignupBtn = document.querySelector('#signup-modal .modal-close');
+    if (closeSignupBtn) {
+        closeSignupBtn.addEventListener('click', closeSignupModal);
+    }
+
     // Close modal when clicking outside
     window.addEventListener('click', function (event) {
-        if (event.target === modal) {
+        if (event.target.classList.contains('cyber-modal') || event.target.classList.contains('modal')) {
             closeModal();
-        }
-        const loginModal = document.getElementById('login-modal');
-        const signupModal = document.getElementById('signup-modal');
-
-        if (event.target === loginModal) {
             closeLoginModal();
-        }
-        if (event.target === signupModal) {
             closeSignupModal();
         }
     });
@@ -777,15 +759,29 @@ function setupEventListeners() {
         contactForm.addEventListener('submit', handleContact);
     }
 
-    // Auth forms
-    const loginForm = document.querySelector('#login-modal .auth-form');
-    if (loginForm) {
-        loginForm.addEventListener('submit', handleLogin);
+    // DIRECT BUTTON CLICK HANDLERS - Add these!
+    const loginBtn = document.querySelector('.login-btn');
+    if (loginBtn) {
+        console.log("✅ Found login button");
+        loginBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            console.log("🔑 Login button clicked");
+            showLoginModal();
+        });
+    } else {
+        console.error("❌ Login button NOT FOUND");
     }
 
-    const signupForm = document.querySelector('#signup-modal .auth-form');
-    if (signupForm) {
-        signupForm.addEventListener('submit', handleSignup);
+    const signupBtn = document.querySelector('.signup-btn');
+    if (signupBtn) {
+        console.log("✅ Found signup button");
+        signupBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            console.log("📝 Signup button clicked");
+            showSignupModal();
+        });
+    } else {
+        console.error("❌ Signup button NOT FOUND");
     }
 
     // Navigation
@@ -806,7 +802,6 @@ function setupEventListeners() {
         });
     });
 }
-
 // ============ UTILITY FUNCTIONS ============
 function showError(message) {
     if (gallery) {

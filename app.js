@@ -96,7 +96,7 @@ export default {
                     const token = generateToken(user);
 
                     return json({
-                        message: "Account created",
+                        message: "Account created successfully",
                         token,
                         user
                     }, 201);
@@ -105,7 +105,7 @@ export default {
                     if (error.message.includes("UNIQUE")) {
                         return json({ error: "Username or email already exists" }, 409);
                     }
-                    throw error;
+                    return json({ error: "Registration failed" }, 500);
                 }
             } catch (error) {
                 console.error("Register error:", error);
@@ -168,6 +168,11 @@ export default {
                     LEFT JOIN users u ON c.user_id = u.id 
                     ORDER BY c.created_at DESC
                 `).all();
+
+                if (!cats.results) {
+                    return json([]);
+                }
+
                 return json(cats.results);
             } catch (error) {
                 console.error("Get cats error:", error);
@@ -186,6 +191,11 @@ export default {
                     WHERE user_id = ? 
                     ORDER BY created_at DESC
                 `).bind(user.id).all();
+
+                if (!cats.results) {
+                    return json([]);
+                }
+
                 return json(cats.results);
             } catch (error) {
                 console.error("Get my cats error:", error);
@@ -349,6 +359,10 @@ export default {
                     ORDER BY tag ASC
                 `).all();
 
+                if (!tags.results) {
+                    return json([]);
+                }
+
                 const tagList = tags.results.map(r => r.tag).filter(tag => tag);
                 return json(tagList);
             } catch (error) {
@@ -393,7 +407,21 @@ export default {
 
         // GET /health - Health check
         if (pathname === "/health" && method === "GET") {
-            return json({ status: "ok", timestamp: new Date().toISOString() });
+            try {
+                // Test database connection
+                await env.DB.prepare("SELECT 1").first();
+                return json({
+                    status: "ok",
+                    timestamp: new Date().toISOString(),
+                    database: "connected"
+                });
+            } catch (error) {
+                return json({
+                    status: "error",
+                    timestamp: new Date().toISOString(),
+                    error: error.message
+                }, 500);
+            }
         }
 
         // ================= STATIC FILES =================

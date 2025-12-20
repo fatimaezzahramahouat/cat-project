@@ -6,6 +6,7 @@ let editingId = null;
 let catsData = [];
 let currentPage = 1;
 const itemsPerPage = 8;
+let currentTagFilter = '';
 
 // ============ DOM ELEMENTS ============
 const gallery = document.getElementById("catGallery");
@@ -29,7 +30,6 @@ function checkAuthState() {
             currentUser = JSON.parse(savedUser);
             authToken = savedToken;
             updateAuthUI();
-            showDashboard();
         } catch (e) {
             console.error('Error parsing saved user:', e);
             clearAuth();
@@ -43,8 +43,7 @@ function clearAuth() {
     localStorage.removeItem('currentUser');
     localStorage.removeItem('authToken');
     updateAuthUI();
-    hideDashboard();
-    loadCats(); // Reload public cats
+    loadCats();
 }
 
 function updateAuthUI() {
@@ -57,9 +56,9 @@ function updateAuthUI() {
                 <span class="username">
                     <i class="fas fa-user-circle"></i> ${currentUser.username}
                 </span>
-                <button class="cyber-btn logout-btn">
+                <a href="#logout" class="cyber-btn logout-btn" onclick="logout()">
                     <i class="fas fa-sign-out-alt"></i> LOGOUT
-                </button>
+                </a>
             </div>
         `;
 
@@ -71,14 +70,17 @@ function updateAuthUI() {
         // Add dashboard to navigation
         addDashboardToNav();
 
+        // Show dashboard section
+        showDashboard();
+
     } else {
         authDiv.innerHTML = `
-            <button class="cyber-btn login-btn">
+            <a href="#login" class="cyber-btn login-btn">
                 <i class="fas fa-sign-in-alt"></i> LOGIN
-            </button>
-            <button class="cyber-btn signup-btn">
+            </a>
+            <a href="#signup" class="cyber-btn signup-btn">
                 <i class="fas fa-user-plus"></i> SIGN UP
-            </button>
+            </a>
         `;
 
         // Hide add cat button
@@ -88,6 +90,9 @@ function updateAuthUI() {
 
         // Remove dashboard from navigation
         removeDashboardFromNav();
+
+        // Show home section
+        showHome();
     }
 }
 
@@ -108,12 +113,6 @@ function addDashboardToNav() {
 
     // Add it after Contact link
     navLinks.appendChild(dashboardLi);
-
-    // Add click event
-    dashboardLi.querySelector('a').addEventListener('click', function (e) {
-        e.preventDefault();
-        navigateToDashboard();
-    });
 }
 
 function removeDashboardFromNav() {
@@ -123,13 +122,12 @@ function removeDashboardFromNav() {
     }
 }
 
-// ============ DASHBOARD FUNCTIONS ============
+// ============ NAVIGATION FUNCTIONS ============
 function showDashboard() {
-    if (!currentUser) return;
-
     // Hide all sections
     document.querySelectorAll('.cyber-section').forEach(section => {
         section.style.display = 'none';
+        section.classList.remove('active');
     });
 
     // Show dashboard
@@ -138,55 +136,47 @@ function showDashboard() {
         dashboard.style.display = 'block';
         dashboard.classList.add('active');
 
-        // Update dashboard info
+        // Update navigation
+        updateNavigation('dashboard');
+
+        // Load dashboard data
         updateDashboardInfo();
-
-        // Load user's cats
         loadMyCats();
-
-        // Load public cats preview
         loadPublicCatsPreview();
     }
 }
 
-function hideDashboard() {
-    const dashboard = document.getElementById('dashboard');
-    if (dashboard) {
-        dashboard.style.display = 'none';
-        dashboard.classList.remove('active');
-    }
+function showHome() {
+    // Hide all sections
+    document.querySelectorAll('.cyber-section').forEach(section => {
+        section.style.display = 'none';
+        section.classList.remove('active');
+    });
 
-    // Show home section
+    // Show home
     const home = document.getElementById('home');
     if (home) {
         home.style.display = 'block';
         home.classList.add('active');
-    }
-}
 
-function navigateToDashboard() {
-    if (!currentUser) {
-        showNotification('Please login to access dashboard', 'error');
-        showLoginModal();
-        return;
-    }
-
-    showDashboard();
-    updateNavigation('dashboard');
-}
-
-function navigateToHome() {
-    hideDashboard();
-
-    const home = document.getElementById('home');
-    if (home) {
-        home.style.display = 'block';
-        home.classList.add('active');
+        // Update navigation
         updateNavigation('home');
+
+        // Load cats
         loadCats();
     }
 }
 
+function updateNavigation(activeSection) {
+    document.querySelectorAll('.cyber-nav-link').forEach(link => {
+        link.classList.remove('active');
+        if (link.getAttribute('href') === `#${activeSection}`) {
+            link.classList.add('active');
+        }
+    });
+}
+
+// ============ DASHBOARD FUNCTIONS ============
 function updateDashboardInfo() {
     if (!currentUser) return;
 
@@ -232,19 +222,20 @@ async function loadMyCats() {
         // Display user's cats
         if (myCats.length === 0) {
             myCatsContainer.innerHTML = `
-                <div class="empty-state">
+                <div class="empty-state" style="grid-column: 1 / -1;">
                     <i class="fas fa-cat fa-3x"></i>
                     <h3>No cats yet!</h3>
                     <p>You haven't added any cats to your collection.</p>
-                    <button class="cyber-btn primary" onclick="openAddModal()">
+                    <a href="#add-cat" class="cyber-btn primary" onclick="openAddModal()">
                         <i class="fas fa-plus"></i> ADD YOUR FIRST CAT
-                    </button>
+                    </a>
                 </div>
             `;
         } else {
             myCatsContainer.innerHTML = myCats.map(cat => `
                 <div class="my-cat-card">
-                    ${cat.IMG ? `<img src="${cat.IMG}" alt="${cat.name}" class="cat-thumb">` : '<div class="no-image">No Image</div>'}
+                    ${cat.IMG ? `<img src="${cat.IMG}" alt="${cat.name}" class="cat-thumb">` :
+                    '<div class="no-image" style="height:150px; background:#0a1a2a; display:flex; align-items:center; justify-content:center; color:#666; border-radius:5px;">No Image</div>'}
                     <div class="cat-info">
                         <h4>${escapeHTML(cat.name)}</h4>
                         <span class="cat-tag">${escapeHTML(cat.tag) || 'No tag'}</span>
@@ -262,7 +253,7 @@ async function loadMyCats() {
         }
     } catch (error) {
         console.error('Error loading user cats:', error);
-        myCatsContainer.innerHTML = '<div class="error">Error loading your cats</div>';
+        myCatsContainer.innerHTML = '<div class="error" style="grid-column:1/-1;">Error loading your cats</div>';
     }
 }
 
@@ -279,13 +270,18 @@ async function loadPublicCatsPreview() {
         // Show only first 4 cats for preview
         const previewCats = publicCats.slice(0, 4);
 
-        publicCatsPreview.innerHTML = previewCats.map(cat => `
-            <div class="preview-card">
-                ${cat.IMG ? `<img src="${cat.IMG}" alt="${cat.name}">` : '<div class="no-image">No Image</div>'}
-                <h4>${escapeHTML(cat.name)}</h4>
-                <span class="preview-tag">${escapeHTML(cat.tag) || 'No tag'}</span>
-            </div>
-        `).join('');
+        if (previewCats.length === 0) {
+            publicCatsPreview.innerHTML = '<div class="empty-state">No public cats yet</div>';
+        } else {
+            publicCatsPreview.innerHTML = previewCats.map(cat => `
+                <div class="preview-card">
+                    ${cat.IMG ? `<img src="${cat.IMG}" alt="${cat.name}">` :
+                    '<div style="height:120px; background:#0a1a2a; display:flex; align-items:center; justify-content:center; color:#666; border-radius:5px;">No Image</div>'}
+                    <h4>${escapeHTML(cat.name)}</h4>
+                    <span class="preview-tag">${escapeHTML(cat.tag) || 'No tag'}</span>
+                </div>
+            `).join('');
+        }
     } catch (error) {
         console.error('Error loading public cats preview:', error);
         publicCatsPreview.innerHTML = '<div class="error">Error loading cats</div>';
@@ -321,8 +317,6 @@ async function handleLogin(e) {
             showNotification(`Welcome ${data.user.username}!`, 'success');
             closeLoginModal();
             updateAuthUI();
-            showDashboard();
-            loadMyCats();
         } else {
             showNotification(data.error || 'Login failed', 'error');
         }
@@ -372,8 +366,6 @@ async function handleSignup(e) {
             showNotification('Account created successfully!', 'success');
             closeSignupModal();
             updateAuthUI();
-            showDashboard();
-            loadMyCats();
         } else {
             showNotification(data.error || 'Signup failed', 'error');
         }
@@ -387,18 +379,16 @@ function logout() {
     if (confirm('Are you sure you want to logout?')) {
         clearAuth();
         showNotification('Logged out successfully', 'info');
-        navigateToHome();
     }
+    return false; // Prevent default link behavior
 }
 
 // ============ MODAL FUNCTIONS ============
 function showLoginModal() {
-    closeAllModals();
     document.getElementById('login-modal').style.display = 'flex';
 }
 
 function showSignupModal() {
-    closeAllModals();
     document.getElementById('signup-modal').style.display = 'flex';
 }
 
@@ -416,7 +406,7 @@ function openAddModal() {
     if (!currentUser) {
         showNotification('Please login to add a cat', 'warning');
         showLoginModal();
-        return;
+        return false;
     }
 
     editingId = null;
@@ -430,17 +420,12 @@ function openAddModal() {
     document.getElementById("editBtn").style.display = "none";
 
     modal.style.display = "flex";
+    return false;
 }
 
 function closeModal() {
     modal.style.display = "none";
     editingId = null;
-}
-
-function closeAllModals() {
-    closeModal();
-    closeLoginModal();
-    closeSignupModal();
 }
 
 // ============ CAT FUNCTIONS ============
@@ -483,9 +468,10 @@ async function addCat() {
         showNotification('✅ Cat added successfully!', 'success');
         closeModal();
 
-        // Refresh data
-        if (document.getElementById('dashboard').style.display === 'block') {
+        // Refresh data based on current view
+        if (document.getElementById('dashboard').classList.contains('active')) {
             loadMyCats();
+            loadPublicCatsPreview();
         } else {
             loadCats();
         }
@@ -536,9 +522,10 @@ async function updateCat() {
         showNotification('✅ Cat updated successfully!', 'success');
         closeModal();
 
-        // Refresh data
-        if (document.getElementById('dashboard').style.display === 'block') {
+        // Refresh data based on current view
+        if (document.getElementById('dashboard').classList.contains('active')) {
             loadMyCats();
+            loadPublicCatsPreview();
         } else {
             loadCats();
         }
@@ -574,9 +561,10 @@ async function deleteCat(id) {
 
         showNotification('✅ Cat deleted successfully!', 'success');
 
-        // Refresh data
-        if (document.getElementById('dashboard').style.display === 'block') {
+        // Refresh data based on current view
+        if (document.getElementById('dashboard').classList.contains('active')) {
             loadMyCats();
+            loadPublicCatsPreview();
         } else {
             loadCats();
         }
@@ -621,11 +609,9 @@ async function loadCats() {
 
     try {
         const response = await fetch('/cats');
-        console.log("Load cats response:", response.status);
 
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const data = await response.json();
@@ -639,10 +625,43 @@ async function loadCats() {
 
         hideLoading();
         renderGallery(catsData);
+
+        // If no cats, show message
+        if (catsData.length === 0) {
+            if (gallery) {
+                gallery.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1 / -1;">
+                        <i class="fas fa-cat fa-3x"></i>
+                        <h3>No Cats Yet!</h3>
+                        <p>The cat gallery is empty. Be the first to add a cat!</p>
+                        ${currentUser ?
+                        `<a href="#add-cat" class="cyber-btn primary" onclick="openAddModal()">
+                                <i class="fas fa-plus"></i> ADD FIRST CAT
+                            </a>` :
+                        `<a href="#signup" class="cyber-btn primary" onclick="showSignupModal()">
+                                <i class="fas fa-user-plus"></i> SIGN UP TO ADD CATS
+                            </a>`
+                    }
+                    </div>
+                `;
+            }
+        }
     } catch (err) {
         console.error('❌ Error loading cats:', err);
         hideLoading();
-        showError('Failed to load cats. ' + err.message);
+
+        if (gallery) {
+            gallery.innerHTML = `
+                <div class="error-state" style="grid-column: 1 / -1;">
+                    <i class="fas fa-exclamation-triangle fa-3x"></i>
+                    <h3>Failed to Load Cats</h3>
+                    <p>${err.message}</p>
+                    <button class="cyber-btn" onclick="loadCats()">
+                        <i class="fas fa-sync"></i> RETRY
+                    </button>
+                </div>
+            `;
+        }
     }
 }
 
@@ -668,7 +687,7 @@ function populateTagFilter(tags) {
     const currentSelection = tagFilter.value;
 
     // Clear and add default option
-    tagFilter.innerHTML = '<option value="">All tags</option>';
+    tagFilter.innerHTML = '<option value="">ALL TAGS</option>';
 
     if (Array.isArray(tags) && tags.length > 0) {
         const validTags = tags
@@ -698,16 +717,47 @@ function showErrorInTagFilter() {
 
 // ============ FILTER & SEARCH ============
 function filterCatsByTag(tag) {
-    let filteredCats = catsData;
+    console.log(`🔍 Filtering by tag: "${tag}"`);
+    currentTagFilter = tag;
 
-    if (tag && tag !== "") {
+    let filteredCats;
+
+    if (!tag || tag === "") {
+        filteredCats = catsData;
+        console.log("🔄 Showing all cats");
+    } else {
         filteredCats = catsData.filter(cat => {
             const catTag = cat.tag ? cat.tag.trim().toLowerCase() : '';
             return catTag === tag.toLowerCase();
         });
+        console.log(`✅ Found ${filteredCats.length} cats with tag: "${tag}"`);
     }
 
     renderGallery(filteredCats);
+    updateFilterIndicator(tag);
+}
+
+function updateFilterIndicator(tag) {
+    const indicator = document.getElementById('filterIndicator');
+    if (!indicator) return;
+
+    if (tag && tag !== "") {
+        indicator.innerHTML = `
+            <span>Filtering by: <strong>${tag}</strong></span>
+            <button onclick="clearFilter()" class="clear-btn">Clear Filter</button>
+        `;
+        indicator.style.display = 'flex';
+    } else {
+        indicator.style.display = 'none';
+    }
+}
+
+function clearFilter() {
+    const tagFilter = document.getElementById('tag-filter');
+    if (tagFilter) {
+        tagFilter.value = '';
+        filterCatsByTag('');
+    }
 }
 
 function setupSearch() {
@@ -715,6 +765,7 @@ function setupSearch() {
 
     searchInput.addEventListener("input", () => {
         const query = searchInput.value.toLowerCase();
+        const tagFilter = document.getElementById('tag-filter');
         const selectedTag = tagFilter ? tagFilter.value : '';
 
         let filteredCats = catsData;
@@ -742,7 +793,10 @@ function setupSearch() {
 
 // ============ RENDER GALLERY ============
 function renderGallery(cats) {
-    if (!gallery) return;
+    if (!gallery) {
+        console.error("❌ Gallery element not found!");
+        return;
+    }
 
     gallery.innerHTML = "";
 
@@ -752,7 +806,9 @@ function renderGallery(cats) {
         return;
     }
 
+    // Reset to page 1 when filtering
     currentPage = 1;
+
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     const paginatedCats = cats.slice(startIndex, endIndex);
@@ -828,6 +884,7 @@ function renderPagination(totalItems) {
 
 function renderGalleryForPage(cats) {
     if (!gallery) return;
+
     gallery.innerHTML = "";
 
     if (!cats || cats.length === 0) {
@@ -905,10 +962,35 @@ async function handleContact(e) {
 function setupEventListeners() {
     console.log("🔧 Setting up event listeners...");
 
-    // Add Cat Button
-    if (addCatBtn) {
-        addCatBtn.addEventListener("click", openAddModal);
-    }
+    // Navigation
+    document.querySelectorAll('.cyber-nav-link').forEach(link => {
+        link.addEventListener('click', function (e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('href').substring(1);
+
+            if (targetId === 'dashboard') {
+                if (!currentUser) {
+                    showNotification('Please login to access dashboard', 'error');
+                    showLoginModal();
+                    return;
+                }
+                showDashboard();
+            } else if (targetId === 'home') {
+                showHome();
+            } else if (targetId === 'add-cat') {
+                openAddModal();
+            } else if (targetId === 'login') {
+                showLoginModal();
+            } else if (targetId === 'signup') {
+                showSignupModal();
+            } else if (targetId === 'logout') {
+                logout();
+            } else {
+                // For about and contact sections
+                navigateToSection(targetId);
+            }
+        });
+    });
 
     // Tag Filter
     if (tagFilter) {
@@ -920,15 +1002,9 @@ function setupEventListeners() {
     // Search
     setupSearch();
 
-    // Close buttons
-    document.querySelectorAll('.modal-close').forEach(btn => {
-        btn.addEventListener('click', closeAllModals);
-    });
-
     // Close modal on outside click
     window.addEventListener('click', function (event) {
-        if (event.target.classList.contains('cyber-modal') ||
-            event.target.classList.contains('modal')) {
+        if (event.target.classList.contains('cyber-modal')) {
             closeAllModals();
         }
     });
@@ -957,51 +1033,12 @@ function setupEventListeners() {
         signupForm.addEventListener('submit', handleSignup);
     }
 
-    // Auth buttons
+    // Dashboard quick action buttons
     document.addEventListener('click', function (e) {
-        if (e.target.closest('.login-btn')) {
+        if (e.target.closest('.quick-actions a[href="#add-cat"]')) {
             e.preventDefault();
-            showLoginModal();
+            openAddModal();
         }
-        if (e.target.closest('.signup-btn')) {
-            e.preventDefault();
-            showSignupModal();
-        }
-        if (e.target.closest('.logout-btn')) {
-            e.preventDefault();
-            logout();
-        }
-    });
-
-    // Cat modal buttons
-    document.getElementById('addBtn').addEventListener('click', addCat);
-    document.getElementById('editBtn').addEventListener('click', updateCat);
-    document.querySelector('#catModal .cancel').addEventListener('click', closeModal);
-
-    // Switch between login/signup modals
-    document.querySelectorAll('.switch-to-signup').forEach(btn => {
-        btn.addEventListener('click', function (e) {
-            e.preventDefault();
-            closeLoginModal();
-            showSignupModal();
-        });
-    });
-
-    document.querySelectorAll('.switch-to-login').forEach(btn => {
-        btn.addEventListener('click', function (e) {
-            e.preventDefault();
-            closeSignupModal();
-            showLoginModal();
-        });
-    });
-
-    // Navigation
-    document.querySelectorAll('.cyber-nav-link').forEach(link => {
-        link.addEventListener('click', function (e) {
-            e.preventDefault();
-            const targetId = this.getAttribute('href').substring(1);
-            navigateToSection(targetId);
-        });
     });
 }
 
@@ -1019,40 +1056,24 @@ function navigateToSection(sectionId) {
         targetSection.classList.add('active');
 
         // Update navigation links
-        document.querySelectorAll('.cyber-nav-link').forEach(link => {
-            link.classList.remove('active');
-            if (link.getAttribute('href') === `#${sectionId}`) {
-                link.classList.add('active');
-            }
-        });
-
-        // Special handling for home section
-        if (sectionId === 'home') {
-            loadCats();
-        }
+        updateNavigation(sectionId);
     }
 }
 
-function updateNavigation(activeSection) {
-    document.querySelectorAll('.cyber-nav-link').forEach(link => {
-        link.classList.remove('active');
-        if (link.getAttribute('href') === `#${activeSection}`) {
-            link.classList.add('active');
-        }
-    });
+function closeAllModals() {
+    closeModal();
+    closeLoginModal();
+    closeSignupModal();
 }
 
 // ============ UTILITY FUNCTIONS ============
 function showError(message) {
-    if (gallery) {
-        gallery.innerHTML = `<div class="error">${message}</div>`;
-    }
     console.error("❌ Error:", message);
 }
 
 function showLoading() {
     if (gallery) {
-        gallery.innerHTML = '<div class="loading">Loading cats...</div>';
+        gallery.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> Loading cats...</div>';
     }
 }
 
@@ -1167,13 +1188,12 @@ window.closeModal = closeModal;
 window.addCat = addCat;
 window.updateCat = updateCat;
 window.filterCatsByTag = filterCatsByTag;
+window.clearFilter = clearFilter;
 window.showLoginModal = showLoginModal;
 window.showSignupModal = showSignupModal;
 window.closeLoginModal = closeLoginModal;
 window.closeSignupModal = closeSignupModal;
 window.logout = logout;
 window.loadMyCats = loadMyCats;
-window.navigateToHome = navigateToHome;
-window.navigateToDashboard = navigateToDashboard;
 
 console.log("🐱 Cat Gallery Script Loaded");

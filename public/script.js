@@ -4,6 +4,7 @@ const API_URL = "/cats";  // Changed from http://localhost:5000/cats
 const API_BASE = ""; // Same origin
 let currentUser = null;
 let editingCatId = null;
+
 // ============ DOM ELEMENTS ============
 const gallery = document.getElementById("catGallery");
 const modal = document.getElementById("catModal");
@@ -762,7 +763,58 @@ document.querySelector('#signup-modal .auth-form')
     });
 
 
+//dash
 
+
+async function loginUser(email, password) {
+    const res = await fetch('/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if (!res.ok) { alert(data.error); return; }
+
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('user', JSON.stringify(data.user));
+    currentUser = data.user;
+    alert('Welcome ' + data.user.username);
+
+    // Refresh dashboard
+    loadCats();
+}
+paginatedCats.forEach(cat => {
+    const isOwner = currentUser && cat.user_id === currentUser.id;
+    const div = document.createElement("div");
+    div.className = "card";
+    div.innerHTML = `
+        ${cat.IMG ? `<img src="${cat.IMG}" alt="${cat.name}" />` : '<div class="no-image">No Image</div>'}
+        <h3>${escapeHTML(cat.name)}</h3>
+        <p>${escapeHTML(cat.description)}</p>
+        <span class="tag-badge">${escapeHTML(cat.tag)}</span>
+        <div class="actions">
+            ${isOwner ? `<button onclick="editCat(${cat.id})">Edit</button>
+                         <button onclick="deleteCat(${cat.id})">Delete</button>` : ''}
+        </div>
+    `;
+    gallery.appendChild(div);
+});
+
+function logout() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    currentUser = null;
+    alert('Logged out');
+    loadCats();
+}
+fetch(API_URL, {
+    method: "POST",
+    headers: {
+        "Content-Type": "application/json",
+        "Authorization": localStorage.getItem('token')
+    },
+    body: JSON.stringify(cat)
+});
 
 // Make debug function available globally
 window.debugApp = debugApp;

@@ -625,8 +625,7 @@ function debugApp() {
         .catch(err => console.log("API error:", err.message));
 }
 
-
-// Navigation between sections
+//auth     // Navigation between sections
 document.querySelectorAll('.cyber-nav-link').forEach(link => {
     link.addEventListener('click', function (e) {
         e.preventDefault();
@@ -643,7 +642,7 @@ document.querySelectorAll('.cyber-nav-link').forEach(link => {
         document.getElementById(targetId).classList.add('active');
     });
 });
-//auth
+
 // Login/Signup buttons
 document.querySelector('.login-btn').addEventListener('click', function (e) {
     e.preventDefault();
@@ -707,62 +706,9 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 
-//login form
-document.querySelector('#login-modal .auth-form')
-    .addEventListener('submit', async function (e) {
-        e.preventDefault();
-
-        const inputs = this.querySelectorAll('input');
-        const email = inputs[0].value;
-        const password = inputs[1].value;
-
-        const res = await fetch('/auth/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password })
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-            alert(data.error);
-            return;
-        }
-
-        localStorage.setItem('token', data.token);
-        alert('Welcome ' + data.user.username);
-        closeLoginModal();
-    });
-
-//signin form
-document.querySelector('#signup-modal .auth-form')
-    .addEventListener('submit', async function (e) {
-        e.preventDefault();
-
-        const inputs = this.querySelectorAll('input');
-        const username = inputs[0].value;
-        const email = inputs[1].value;
-        const password = inputs[2].value;
-
-        const res = await fetch('/auth/register', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, email, password })
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-            alert(data.error);
-            return;
-        }
-
-        alert('Account created, you can login now');
-        closeSignupModal();
-    });
 
 
-//dash
+
 
 // Make debug function available globally
 window.debugApp = debugApp;

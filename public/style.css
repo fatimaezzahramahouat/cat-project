@@ -1360,29 +1360,29 @@ header {
     display: flex;
     align-items: center;
     gap: 10px;
-    /* مسافة بين H1 و input */
+
     padding: 10px 20px;
 }
 
 #searchInput {
     width: 400px;
-    /* صغيّر شوية */
+
     padding: 8px 12px;
-    /* مريح فالكتابة */
+
     font-size: 14px;
     border: 2px solid #567af0bb;
-    /* bkhat من الخارج */
+
     border-radius: 20px;
-    /* مدوّر */
+
     outline: none;
     display: block;
     margin: 15px auto;
-    /* فالوسط */
+
     text-align: center;
     transition: all 0.3s ease;
 }
 
-/* ملي يتكليكي عليه */
+
 #searchInput:focus {
     border-color: #2ecc71;
     box-shadow: 0 0 8px rgba(46, 204, 113, 0.4);
@@ -1391,7 +1391,7 @@ header {
 
 #addCatBtn {
     margin-left: auto;
-    /* يدف الزر لأقصى اليمين */
+
     background-color: #fd0be9;
     color: white;
     border: none;
@@ -1405,17 +1405,15 @@ header {
 .search-container {
     position: relative;
     width: 200px;
-    /* الحجم الصغير */
+
     margin: 20px auto;
-    /* كيخليها في الوسط */
+
 }
 
 #searchInput {
 
     padding: 8px 35px 8px 10px;
-    /* padding صغير */
     font-size: 30px;
-    /* خط أصغر */
     border-radius: 20px;
     border: 2px solid #ccc;
     outline: none;
@@ -1445,36 +1443,34 @@ header {
 /*card*/
 .card {
     background-color: #fff;
-    /* خلفية بيضاء */
+
     border-radius: 15px;
-    /* حواف مدورة */
+
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    /* ظل خفيف */
+
     overflow: hidden;
-    /* كيقطع أي حاجة خارج الـ card */
+
     width: 250px;
-    /* عرض موحد */
+
     margin: 15px;
-    /* مسافة بين الكاردات */
+
     transition: transform 0.3s, box-shadow 0.3s;
-    /* حركة عند hover */
+
     cursor: pointer;
     display: inline-block;
-    /* باش تبقا في سطر واحد مع gallery */
+
 }
 
 .card:hover {
     transform: translateY(-5px);
-    /* حركة بسيطة */
     box-shadow: 8px 16px rgba(0, 0, 0, 0.2);
-    /* ظل أكبر عند hover */
 }
 
 .card img {
     width: 100%;
     height: 180px;
     object-fit: cover;
-    /* يقطع الصورة بطريقة جميلة */
+
 }
 
 .card h3 {
@@ -1488,9 +1484,9 @@ header {
     color: #555;
     padding: 0 10px;
     height: 50px;
-    /* مسافة محددة لوصف قصير */
+
     overflow: hidden;
-    /* يقطع النص الطويل */
+
 }
 
 .card .tag {
@@ -1555,16 +1551,16 @@ header {
     width: 100%;
     height: 100%;
     background: rgba(0, 0, 0, 0.6);
-    /* غطاء شبه شفاف للـ fog */
+
     backdrop-filter: blur(4px);
-    /* ضبابية خلفية الصفحة */
+
     display: none;
-    /* يكون مخفي مبدئياً */
+
     justify-content: center;
-    /* وضع modal-content في الوسط */
+
     align-items: center;
     z-index: 1000;
-    /* فوق كل العناصر */
+
 }
 
 /* modal-content */

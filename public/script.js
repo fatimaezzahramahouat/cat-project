@@ -1,7 +1,9 @@
 // ============ API CONFIGURATION ============
 // Use relative URL for your Cloudflare Worker
 const API_URL = "/cats";  // Changed from http://localhost:5000/cats
-
+const API_BASE = ""; // Same origin
+let currentUser = null;
+let editingCatId = null;
 // ============ DOM ELEMENTS ============
 const gallery = document.getElementById("catGallery");
 const modal = document.getElementById("catModal");
@@ -622,6 +624,144 @@ function debugApp() {
         .then(res => console.log("Current API status:", res.status))
         .catch(err => console.log("API error:", err.message));
 }
+
+
+// Navigation between sections
+document.querySelectorAll('.cyber-nav-link').forEach(link => {
+    link.addEventListener('click', function (e) {
+        e.preventDefault();
+        const targetId = this.getAttribute('href').substring(1);
+
+        // Update active nav link
+        document.querySelectorAll('.cyber-nav-link').forEach(l => l.classList.remove('active'));
+        this.classList.add('active');
+
+        // Show target section
+        document.querySelectorAll('.cyber-section').forEach(section => {
+            section.classList.remove('active');
+        });
+        document.getElementById(targetId).classList.add('active');
+    });
+});
+//auth
+// Login/Signup buttons
+document.querySelector('.login-btn').addEventListener('click', function (e) {
+    e.preventDefault();
+    document.getElementById('login-modal').style.display = 'flex';
+});
+
+document.querySelector('.signup-btn').addEventListener('click', function (e) {
+    e.preventDefault();
+    document.getElementById('signup-modal').style.display = 'flex';
+});
+
+// Close modals
+function closeLoginModal() {
+    document.getElementById('login-modal').style.display = 'none';
+}
+
+function closeSignupModal() {
+    document.getElementById('signup-modal').style.display = 'none';
+}
+
+// Contact form submission
+document.querySelector('.contact-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    alert('Message sent securely!');
+    this.reset();
+});
+
+// Auth forms
+document.querySelectorAll('.auth-form').forEach(form => {
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        alert('Authentication successful!');
+        closeLoginModal();
+        closeSignupModal();
+    });
+});
+
+// Update cat count
+function updateCatCount(count) {
+    document.getElementById('catCount').textContent = count;
+}
+
+// Initialize with home section active
+document.addEventListener('DOMContentLoaded', function () {
+    document.getElementById('home').classList.add('active');
+
+    // Start typing animation
+    const title = document.querySelector('.terminal-header h1');
+    if (title) {
+        const text = title.textContent;
+        title.textContent = '';
+        let i = 0;
+        const typing = setInterval(() => {
+            if (i < text.length) {
+                title.textContent += text.charAt(i);
+                i++;
+            } else {
+                clearInterval(typing);
+            }
+        }, 50);
+    }
+});
+
+//login form
+document.querySelector('#login-modal .auth-form')
+    .addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const inputs = this.querySelectorAll('input');
+        const email = inputs[0].value;
+        const password = inputs[1].value;
+
+        const res = await fetch('/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            alert(data.error);
+            return;
+        }
+
+        localStorage.setItem('token', data.token);
+        alert('Welcome ' + data.user.username);
+        closeLoginModal();
+    });
+
+//signin form
+document.querySelector('#signup-modal .auth-form')
+    .addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const inputs = this.querySelectorAll('input');
+        const username = inputs[0].value;
+        const email = inputs[1].value;
+        const password = inputs[2].value;
+
+        const res = await fetch('/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, email, password })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            alert(data.error);
+            return;
+        }
+
+        alert('Account created, you can login now');
+        closeSignupModal();
+    });
+
+
 
 // Make debug function available globally
 window.debugApp = debugApp;

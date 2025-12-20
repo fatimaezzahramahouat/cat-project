@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="style.css" />
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Cyber Fonts -->
+    <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Share+Tech+Mono&display=swap"
         rel="stylesheet">
 </head>
@@ -313,88 +313,7 @@
     </footer>
 
     <script src="script.js"></script>
-    <script>
-        // Navigation between sections
-        document.querySelectorAll('.cyber-nav-link').forEach(link => {
-            link.addEventListener('click', function (e) {
-                e.preventDefault();
-                const targetId = this.getAttribute('href').substring(1);
 
-                // Update active nav link
-                document.querySelectorAll('.cyber-nav-link').forEach(l => l.classList.remove('active'));
-                this.classList.add('active');
-
-                // Show target section
-                document.querySelectorAll('.cyber-section').forEach(section => {
-                    section.classList.remove('active');
-                });
-                document.getElementById(targetId).classList.add('active');
-            });
-        });
-
-        // Login/Signup buttons
-        document.querySelector('.login-btn').addEventListener('click', function (e) {
-            e.preventDefault();
-            document.getElementById('login-modal').style.display = 'flex';
-        });
-
-        document.querySelector('.signup-btn').addEventListener('click', function (e) {
-            e.preventDefault();
-            document.getElementById('signup-modal').style.display = 'flex';
-        });
-
-        // Close modals
-        function closeLoginModal() {
-            document.getElementById('login-modal').style.display = 'none';
-        }
-
-        function closeSignupModal() {
-            document.getElementById('signup-modal').style.display = 'none';
-        }
-
-        // Contact form submission
-        document.querySelector('.contact-form').addEventListener('submit', function (e) {
-            e.preventDefault();
-            alert('Message sent securely!');
-            this.reset();
-        });
-
-        // Auth forms
-        document.querySelectorAll('.auth-form').forEach(form => {
-            form.addEventListener('submit', function (e) {
-                e.preventDefault();
-                alert('Authentication successful!');
-                closeLoginModal();
-                closeSignupModal();
-            });
-        });
-
-        // Update cat count
-        function updateCatCount(count) {
-            document.getElementById('catCount').textContent = count;
-        }
-
-        // Initialize with home section active
-        document.addEventListener('DOMContentLoaded', function () {
-            document.getElementById('home').classList.add('active');
-
-            // Start typing animation
-            const title = document.querySelector('.terminal-header h1');
-            if (title) {
-                const text = title.textContent;
-                title.textContent = '';
-                let i = 0;
-                const typing = setInterval(() => {
-                    if (i < text.length) {
-                        title.textContent += text.charAt(i);
-                        i++;
-                    } else {
-                        clearInterval(typing);
-                    }
-                }, 50);
-            }
-        });
-    </script>
 </body>
 
 </html>

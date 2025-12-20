@@ -158,6 +158,73 @@ export default {
             }
         }
 
+        ///AUTH
+        /* ================= HELPERS ================= */
+
+        function json(data, status, headers) {
+            return new Response(JSON.stringify(data), {
+                status,
+                headers: {
+                    "Content-Type": "application/json",
+                    ...headers
+                }
+            });
+        }
+
+        async function hashPassword(password) {
+            const data = new TextEncoder().encode(password);
+            const hash = await crypto.subtle.digest("SHA-256", data);
+            return [...new Uint8Array(hash)]
+                .map(b => b.toString(16).padStart(2, "0"))
+                .join("");
+        }
+
+        /* ================= AUTH LOGIC ================= */
+
+        async function register(req, env, headers) {
+            const { username, email, password } = await req.json();
+
+            if (!username || !email || !password) {
+                return json({ error: "All fields required" }, 400, headers);
+            }
+
+            const password_hash = await hashPassword(password);
+
+            try {
+                await env.DB.prepare(`
+      INSERT INTO users (username, email, password_hash)
+      VALUES (?, ?, ?)
+    `).bind(username, email, password_hash).run();
+
+                return json({ message: "Account created" }, 201, headers);
+            } catch {
+                return json({ error: "User already exists" }, 409, headers);
+            }
+        }
+
+        async function login(req, env, headers) {
+            const { email, password } = await req.json();
+            const password_hash = await hashPassword(password);
+
+            const user = await env.DB.prepare(`
+    SELECT id, username, role
+    FROM users
+    WHERE email = ? AND password_hash = ?
+  `).bind(email, password_hash).first();
+
+            if (!user) {
+                return json({ error: "Invalid credentials" }, 401, headers);
+            }
+
+            const token = btoa(JSON.stringify({
+                id: user.id,
+                role: user.role,
+                exp: Date.now() + 86400000
+            }));
+
+            return json({ token, user }, 200, headers);
+        }
+
         // ========== STATIC FILES ==========
         // For everything else, Cloudflare will serve static files from /public
         // This includes /, /index.html, /style.css, etc.
@@ -166,3 +233,7 @@ export default {
         return fetch(request);
     }
 };
+
+//
+//app.js	Auth, DB, Security
+//script.js	UI, fetch, DOM

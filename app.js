@@ -15,6 +15,15 @@ export default {
         if (method === "OPTIONS") {
             return new Response(null, { headers: corsHeaders });
         }
+        // ================= AUTH ROUTES =================
+
+        if (pathname === "/auth/register" && method === "POST") {
+            return register(request, env, corsHeaders);
+        }
+
+        if (pathname === "/auth/login" && method === "POST") {
+            return login(request, env, corsHeaders);
+        }
 
         // ========== API ROUTES ==========
 

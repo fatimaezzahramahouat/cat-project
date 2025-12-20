@@ -760,6 +760,21 @@ document.querySelector('#signup-modal .auth-form')
         alert('Account created, you can login now');
         closeSignupModal();
     });
+// ================= LOGOUT =================
+function logout() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    alert('Logged out successfully ✅');
+
+    // Optional: redirect to home
+    window.location.href = '/';
+}
+
+// ربط مع زر logout (إلا عندك واحد فـ HTML)
+const logoutBtn = document.querySelector('.logout-btn');
+if (logoutBtn) {
+    logoutBtn.addEventListener('click', logout);
+}
 
 
 

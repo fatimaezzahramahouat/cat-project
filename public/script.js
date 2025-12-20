@@ -183,24 +183,50 @@ function logout() {
 }
 
 // ============ MODAL FUNCTIONS ============
-
 function showLoginModal() {
-    console.log("🔄 Showing login modal");
-    closeAllModals();
     document.getElementById('login-modal').style.display = 'flex';
 }
 
 function showSignupModal() {
-    console.log("🔄 Showing signup modal");
-    closeAllModals();
     document.getElementById('signup-modal').style.display = 'flex';
 }
 
-function closeAllModals() {
-    closeModal();
-    closeLoginModal();
-    closeSignupModal();
+function closeLoginModal() {
+    document.getElementById('login-modal').style.display = 'none';
+    const form = document.querySelector('#login-modal .auth-form');
+    if (form) form.reset();
 }
+
+function closeSignupModal() {
+    document.getElementById('signup-modal').style.display = 'none';
+    const form = document.querySelector('#signup-modal .auth-form');
+    if (form) form.reset();
+}
+
+function openAddModal() {
+    if (!currentUser) {
+        showNotification('Please login to add a cat', 'warning');
+        showLoginModal();
+        return;
+    }
+
+    nameInput.value = "";
+    tagInput.value = "";
+    descriptionInput.value = "";
+    imgInput.value = "";
+    editingId = null;
+
+    document.getElementById("addBtn").style.display = "inline-block";
+    document.getElementById("editBtn").style.display = "none";
+
+    modal.style.display = "flex";
+}
+
+function closeModal() {
+    modal.style.display = "none";
+    editingId = null;
+}
+
 // ============ CAT FUNCTIONS WITH AUTH ============
 async function addCat() {
     if (!currentUser) {

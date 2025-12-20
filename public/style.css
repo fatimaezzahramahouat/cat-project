@@ -1824,34 +1824,3 @@ div#pagination.pagination {
 #refreshTagsBtn:hover {
     background: #45a049;
 }
-
-/* Remove default button styles for auth buttons */
-.cyber-auth button {
-    background: none;
-    border: none;
-    color: inherit;
-    font: inherit;
-    cursor: pointer;
-    text-decoration: none;
-    display: inline-block;
-    padding: 10px 20px;
-    margin: 0 5px;
-}
-
-/* Ensure cyber-btn styles still apply */
-.cyber-auth .cyber-btn {
-    /* Keep your existing cyber-btn styles */
-    background: var(--cyber-dark);
-    border: 1px solid var(--neon-blue);
-    color: var(--neon-blue);
-    font-family: 'Share Tech Mono', monospace;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    transition: all 0.3s ease;
-}
-
-.cyber-auth .cyber-btn:hover {
-    background: var(--neon-blue);
-    color: var(--cyber-dark);
-    box-shadow: 0 0 15px var(--neon-blue);
-}

@@ -66,57 +66,75 @@ export default {
         if (pathname === "/cats" && method === "POST") {
             try {
                 const body = await request.json();
-                const token = request.headers.get("Authorization");
-                if (!token) return json({ error: "Unauthorized" }, 401, corsHeaders);
-
-                const user = JSON.parse(atob(token));
-                if (!body.name) return json({ error: "Name required" }, 400, corsHeaders);
+                if (!body.name) {
+                    return Response.json(
+                        { error: "Name is required" },
+                        { status: 400, headers: corsHeaders }
+                    );
+                }
 
                 const result = await env.DB
-                    .prepare("INSERT INTO cats (name, tag, description, IMG, user_id) VALUES (?, ?, ?, ?, ?)")
-                    .bind(body.name, body.tag || null, body.description || null, body.IMG || null, user.id)
+                    .prepare("INSERT INTO cats (name, tag, description, IMG) VALUES (?, ?, ?, ?)")
+                    .bind(body.name, body.tag || null, body.description || null, body.IMG || null)
                     .run();
 
-                return json({ message: "Cat added", id: result.meta.last_row_id }, 201, corsHeaders);
-            } catch (err) {
-                console.error(err);
-                return json({ error: "Failed to add cat" }, 500, corsHeaders);
+                return Response.json(
+                    {
+                        message: "Cat added successfully",
+                        id: result.meta.last_row_id
+                    },
+                    { status: 201, headers: corsHeaders }
+                );
+            } catch (error) {
+                console.error("Database error:", error);
+                return Response.json(
+                    { error: "Failed to add cat" },
+                    { status: 500, headers: corsHeaders }
+                );
             }
         }
 
         // PUT /cats/:id - Update cat
         if (pathname.startsWith("/cats/") && method === "PUT") {
-            const id = pathname.split("/")[2];
-            const body = await request.json();
-            const token = request.headers.get("Authorization");
-            if (!token) return json({ error: "Unauthorized" }, 401, corsHeaders);
+            try {
+                const id = pathname.split("/")[2];
+                const body = await request.json();
 
-            const user = JSON.parse(atob(token));
+                await env.DB
+                    .prepare("UPDATE cats SET name = ?, tag = ?, description = ?, IMG = ? WHERE id = ?")
+                    .bind(body.name, body.tag, body.description, body.IMG, id)
+                    .run();
 
-            const cat = await env.DB.prepare("SELECT user_id FROM cats WHERE id = ?").bind(id).first();
-            if (!cat) return json({ error: "Cat not found" }, 404, corsHeaders);
-            if (cat.user_id !== user.id) return json({ error: "Forbidden" }, 403, corsHeaders);
-
-            await env.DB.prepare("UPDATE cats SET name=?, tag=?, description=?, IMG=? WHERE id=?")
-                .bind(body.name, body.tag, body.description, body.IMG, id).run();
-
-            return json({ message: "Cat updated" }, 200, corsHeaders);
+                return Response.json(
+                    { message: "Cat updated successfully" },
+                    { headers: corsHeaders }
+                );
+            } catch (error) {
+                console.error("Database error:", error);
+                return Response.json(
+                    { error: "Failed to update cat" },
+                    { status: 500, headers: corsHeaders }
+                );
+            }
         }
 
         // DELETE /cats/:id - Delete cat
         if (pathname.startsWith("/cats/") && method === "DELETE") {
-            const id = pathname.split("/")[2];
-            const token = request.headers.get("Authorization");
-            if (!token) return json({ error: "Unauthorized" }, 401, corsHeaders);
+            try {
+                const id = pathname.split("/")[2];
+                await env.DB.prepare("DELETE FROM cats WHERE id = ?").bind(id).run();
 
-            const user = JSON.parse(atob(token));
-
-            const cat = await env.DB.prepare("SELECT user_id FROM cats WHERE id=?").bind(id).first();
-            if (!cat) return json({ error: "Cat not found" }, 404, corsHeaders);
-            if (cat.user_id !== user.id) return json({ error: "Forbidden" }, 403, corsHeaders);
-
-            await env.DB.prepare("DELETE FROM cats WHERE id=?").bind(id).run();
-            return json({ message: "Cat deleted" }, 200, corsHeaders);
+                return Response.json(
+                    { message: "Cat deleted successfully" },
+                    { headers: corsHeaders }
+                );
+            } catch (error) {
+                console.error("Database error:", error);
+                return Response.json(
+                    { error: "Failed to delete cat" },
+                    { status: 500, headers: corsHeaders }
+                );
+            }
         }
 
         // GET /tags - Get all unique tags
@@ -208,7 +226,6 @@ export default {
             return json({ token, user }, 200, headers);
         }
 
-
         // ================= AUTH ROUTES =================
 
         if (pathname === "/auth/register" && method === "POST") {
@@ -218,6 +235,18 @@ export default {
         if (pathname === "/auth/login" && method === "POST") {
             return login(request, env, corsHeaders);
         }
+
+
+
+
+
+
+
+
+
+
+
+
         // ========== STATIC FILES ==========
         // For everything else, Cloudflare will serve static files from /public
         // This includes /, /index.html, /style.css, etc.

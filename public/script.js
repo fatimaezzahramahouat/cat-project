@@ -760,38 +760,7 @@ document.querySelector('#signup-modal .auth-form')
         alert('Account created, you can login now');
         closeSignupModal();
     });
-// ================= LOGOUT =================
-function logout() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    alert('Logged out successfully ✅');
 
-    // Optional: redirect to home
-    window.location.href = '/';
-}
-
-// ربط مع زر logout (إلا عندك واحد فـ HTML)
-const logoutBtn = document.querySelector('.logout-btn');
-if (logoutBtn) {
-    logoutBtn.addEventListener('click', logout);
-}
-//hiding guest user after logout
-document.addEventListener('DOMContentLoaded', () => {
-    const user = JSON.parse(localStorage.getItem('user'));
-
-    const loggedInElements = document.querySelectorAll('.logged-in'); // عناصر تظهر للمسجّل دخول
-    const guestElements = document.querySelectorAll('.guest'); // عناصر تظهر للزوار
-
-    if (user) {
-        // المستخدم مسجّل دخول
-        loggedInElements.forEach(el => el.style.display = 'block');
-        guestElements.forEach(el => el.style.display = 'none');
-    } else {
-        // الزائر أو بعد logout
-        loggedInElements.forEach(el => el.style.display = 'none');
-        guestElements.forEach(el => el.style.display = 'block');
-    }
-});
 
 
 

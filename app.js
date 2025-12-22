@@ -159,59 +159,6 @@ export default {
         }
 
         ///AUTH
-        document.querySelector('#signup-modal .auth-form')
-            .addEventListener('submit', async (e) => {
-                e.preventDefault();
-
-                const inputs = e.target.querySelectorAll('input');
-                const username = inputs[0].value;
-                const email = inputs[1].value;
-                const password = inputs[2].value;
-
-                const res = await fetch('/auth/register', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, email, password })
-                });
-
-                const data = await res.json();
-
-                if (!res.ok) {
-                    alert(data.error);
-                    return;
-                }
-
-                alert('Account created successfully');
-                closeSignupModal();
-            });
-        document.querySelector('#login-modal .auth-form')
-            .addEventListener('submit', async (e) => {
-                e.preventDefault();
-
-                const inputs = e.target.querySelectorAll('input');
-                const email = inputs[0].value;
-                const password = inputs[1].value;
-
-                const res = await fetch('/auth/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password })
-                });
-
-                const data = await res.json();
-
-                if (!res.ok) {
-                    alert(data.error);
-                    return;
-                }
-
-                localStorage.setItem('token', data.token);
-                localStorage.setItem('user', JSON.stringify(data.user));
-
-                alert('Welcome ' + data.user.username);
-                closeLoginModal();
-                initDashboard();
-            });
 
 
 

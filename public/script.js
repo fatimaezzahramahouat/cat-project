@@ -4,6 +4,9 @@ const API_URL = "/cats";  // Changed from http://localhost:5000/cats
 const API_BASE = ""; // Same origin
 let currentUser = null;
 let editingCatId = null;
+// Authentication State
+
+let isAuthenticated = false;
 // ============ DOM ELEMENTS ============
 const gallery = document.getElementById("catGallery");
 const modal = document.getElementById("catModal");
@@ -823,7 +826,430 @@ function closeAllModals() {
     closeSignupModal();
 }
 
+//authhhhh
 
+
+// Mock User Database (In production, use backend API)
+const mockUsers = [
+    {
+        id: 1,
+        username: 'admin',
+        email: 'admin@cattey.com',
+        password: 'password123',
+        joined: '2024-01-01',
+        role: 'admin',
+        cats: []
+    }
+];
+
+// Initialize authentication
+function initAuth() {
+    // Check if user is logged in from localStorage
+    const savedUser = localStorage.getItem('currentUser');
+    if (savedUser) {
+        currentUser = JSON.parse(savedUser);
+        isAuthenticated = true;
+        updateUIForAuth();
+    }
+
+    // Setup event listeners
+    setupAuthListeners();
+}
+
+// Setup authentication event listeners
+function setupAuthListeners() {
+    // Login form submit
+    const loginForm = document.getElementById('login-form');
+    if (loginForm) {
+        loginForm.addEventListener('submit', handleLogin);
+    }
+
+    // Signup form submit
+    const signupForm = document.getElementById('signup-form');
+    if (signupForm) {
+        signupForm.addEventListener('submit', handleSignup);
+    }
+
+    // Logout button
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', handleLogout);
+    }
+
+    // Login/Signup modal triggers
+    document.querySelectorAll('[href="#login"]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            showLoginModal();
+        });
+    });
+
+    document.querySelectorAll('[href="#signup"]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            showSignupModal();
+        });
+    });
+}
+
+// Handle Login
+function handleLogin(e) {
+    e.preventDefault();
+
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+    const errorElement = document.getElementById('login-error');
+
+    // Clear previous errors
+    errorElement.style.display = 'none';
+
+    // Validate input
+    if (!email || !password) {
+        showError(errorElement, 'Please fill in all fields');
+        return;
+    }
+
+    // Find user (mock authentication)
+    const user = mockUsers.find(u => u.email === email && u.password === password);
+
+    if (!user) {
+        showError(errorElement, 'Invalid email or password');
+        return;
+    }
+
+    // Login successful
+    currentUser = {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        joined: user.joined
+    };
+
+    isAuthenticated = true;
+
+    // Save to localStorage
+    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+
+    // Update UI
+    updateUIForAuth();
+
+    // Close modal and show dashboard
+    closeModal('login-modal');
+    showDashboard();
+
+    // Clear form
+    document.getElementById('login-form').reset();
+}
+
+// Handle Signup
+function handleSignup(e) {
+    e.preventDefault();
+
+    const username = document.getElementById('signup-username').value;
+    const email = document.getElementById('signup-email').value;
+    const password = document.getElementById('signup-password').value;
+    const confirmPassword = document.getElementById('signup-confirm').value;
+    const errorElement = document.getElementById('signup-error');
+
+    // Clear previous errors
+    errorElement.style.display = 'none';
+
+    // Validate input
+    if (!username || !email || !password || !confirmPassword) {
+        showError(errorElement, 'Please fill in all fields');
+        return;
+    }
+
+    if (password !== confirmPassword) {
+        showError(errorElement, 'Passwords do not match');
+        return;
+    }
+
+    if (password.length < 6) {
+        showError(errorElement, 'Password must be at least 6 characters');
+        return;
+    }
+
+    // Check if user exists
+    const userExists = mockUsers.some(u => u.email === email);
+    if (userExists) {
+        showError(errorElement, 'Email already registered');
+        return;
+    }
+
+    // Create new user (mock registration)
+    const newUser = {
+        id: mockUsers.length + 1,
+        username: username,
+        email: email,
+        password: password,
+        joined: new Date().toISOString().split('T')[0],
+        role: 'user',
+        cats: []
+    };
+
+    mockUsers.push(newUser);
+
+    // Auto login after signup
+    currentUser = {
+        id: newUser.id,
+        username: newUser.username,
+        email: newUser.email,
+        role: newUser.role,
+        joined: newUser.joined
+    };
+
+    isAuthenticated = true;
+    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+
+    // Update UI
+    updateUIForAuth();
+
+    // Close modal and show dashboard
+    closeModal('signup-modal');
+    showDashboard();
+
+    // Clear form
+    document.getElementById('signup-form').reset();
+}
+
+// Handle Logout
+function handleLogout() {
+    currentUser = null;
+    isAuthenticated = false;
+    localStorage.removeItem('currentUser');
+    updateUIForAuth();
+    showHome(); // Go back to home
+}
+
+// Update UI based on authentication state
+function updateUIForAuth() {
+    const authButtons = document.querySelector('.cyber-auth');
+    const navLinks = document.querySelector('.cyber-nav-links');
+
+    if (isAuthenticated && currentUser) {
+        // Replace auth buttons with user info
+        authButtons.innerHTML = `
+            <div class="user-info">
+                <div class="user-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="user-details">
+                    <span class="user-name">${currentUser.username}</span>
+                    <span class="user-role">${currentUser.role.toUpperCase()}</span>
+                </div>
+                <button class="cyber-btn logout-btn" onclick="handleLogout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+        `;
+
+        // Add dashboard link to navigation
+        const dashboardLink = document.createElement('li');
+        dashboardLink.innerHTML = `
+            <a href="#dashboard" class="cyber-nav-link" onclick="showDashboard()">
+                <i class="fas fa-dashboard"></i> DASHBOARD
+            </a>
+        `;
+        navLinks.appendChild(dashboardLink);
+
+        // Update dashboard display
+        updateDashboard();
+    } else {
+        // Show login/signup buttons
+        authButtons.innerHTML = `
+            <a href="#login" class="cyber-btn login-btn" onclick="showLoginModal()">
+                <i class="fas fa-sign-in-alt"></i> LOGIN
+            </a>
+            <a href="#signup" class="cyber-btn signup-btn" onclick="showSignupModal()">
+                <i class="fas fa-user-plus"></i> SIGN UP
+            </a>
+        `;
+
+        // Remove dashboard link
+        const dashboardLink = navLinks.querySelector('a[href="#dashboard"]');
+        if (dashboardLink) {
+            dashboardLink.parentElement.remove();
+        }
+    }
+}
+
+// Update Dashboard
+function updateDashboard() {
+    if (!currentUser) return;
+
+    // Update user info
+    document.getElementById('username-display').textContent = currentUser.username;
+    document.getElementById('dashboard-username').textContent = currentUser.username;
+    document.getElementById('dashboard-email').textContent = currentUser.email;
+    document.getElementById('dashboard-joined').textContent = currentUser.joined;
+
+    // Count user's cats (filter by owner)
+    const userCats = cats.filter(cat => cat.ownerId === currentUser.id);
+    document.getElementById('my-cats-count').textContent = userCats.length;
+
+    // Display user's cats
+    const myCatsGallery = document.getElementById('my-cats-gallery');
+    myCatsGallery.innerHTML = '';
+
+    userCats.slice(0, 6).forEach(cat => {
+        const catElement = document.createElement('div');
+        catElement.className = 'mini-cat-card';
+        catElement.innerHTML = `
+            <img src="${cat.img}" alt="${cat.name}" onerror="this.src='https://placekitten.com/200/200'">
+        `;
+        catElement.onclick = () => showCatDetails(cat.id);
+        myCatsGallery.appendChild(catElement);
+    });
+
+    // Update activity feed
+    updateActivityFeed();
+}
+
+// Update Activity Feed
+function updateActivityFeed() {
+    const activityFeed = document.getElementById('activity-feed');
+    if (!activityFeed) return;
+
+    const activities = [
+        { action: 'Logged in to dashboard', time: 'Just now' },
+        { action: 'Added new cat: "Whiskers"', time: '2 hours ago' },
+        { action: 'Updated profile information', time: '1 day ago' },
+        { action: 'Liked 5 cat photos', time: '2 days ago' }
+    ];
+
+    activityFeed.innerHTML = activities.map(activity => `
+        <div class="activity-item">
+            ${activity.action}
+            <time>${activity.time}</time>
+        </div>
+    `).join('');
+}
+
+// Show Dashboard
+function showDashboard() {
+    if (!isAuthenticated) {
+        showLoginModal();
+        return;
+    }
+
+    // Hide all sections
+    document.querySelectorAll('.cyber-section').forEach(section => {
+        section.classList.remove('active');
+    });
+
+    // Show dashboard
+    const dashboard = document.getElementById('dashboard');
+    if (dashboard) {
+        dashboard.classList.add('active');
+        updateDashboard();
+    }
+
+    // Update navigation
+    document.querySelectorAll('.cyber-nav-link').forEach(link => {
+        link.classList.remove('active');
+    });
+}
+
+// Show Login Modal
+function showLoginModal() {
+    closeAllModals();
+    document.getElementById('login-modal').style.display = 'flex';
+    document.getElementById('login-email').focus();
+}
+
+// Show Signup Modal
+function showSignupModal() {
+    closeAllModals();
+    document.getElementById('signup-modal').style.display = 'flex';
+    document.getElementById('signup-username').focus();
+}
+
+// Show Error Message
+function showError(element, message) {
+    element.textContent = message;
+    element.style.display = 'block';
+}
+
+// Update your existing closeModal function
+function closeModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+}
+
+function closeAllModals() {
+    document.querySelectorAll('.cyber-modal').forEach(modal => {
+        modal.style.display = 'none';
+    });
+}
+
+// Update your existing cat adding function to include owner
+function addCat() {
+    if (!isAuthenticated) {
+        showLoginModal();
+        return;
+    }
+
+    const name = document.getElementById('name').value;
+    const tag = document.getElementById('tag').value;
+    const img = document.getElementById('img').value;
+    const description = document.getElementById('description').value;
+
+    if (!name || !img) {
+        alert('Please fill in at least name and image URL');
+        return;
+    }
+
+    const newCat = {
+        id: cats.length + 1,
+        name: name,
+        tag: tag.toLowerCase(),
+        img: img || 'https://placekitten.com/400/300',
+        description: description,
+        likes: 0,
+        ownerId: currentUser.id,
+        ownerName: currentUser.username,
+        date: new Date().toISOString().split('T')[0]
+    };
+
+    cats.unshift(newCat);
+
+    // Close modal and update display
+    closeCatModal();
+    displayCats();
+    updateDashboard(); // Refresh dashboard
+
+    // Clear form
+    document.getElementById('name').value = '';
+    document.getElementById('tag').value = '';
+    document.getElementById('img').value = '';
+    document.getElementById('description').value = '';
+}
+
+// Initialize authentication when page loads
+document.addEventListener('DOMContentLoaded', function () {
+    initAuth();
+
+    // Add dashboard link to navigation if authenticated
+    if (isAuthenticated) {
+        updateUIForAuth();
+    }
+});
+// In your existing navigation code, add:
+document.addEventListener('DOMContentLoaded', function () {
+    // ... existing navigation code ...
+
+    // Add dashboard navigation
+    document.querySelectorAll('a[href="#dashboard"]').forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            showDashboard();
+        });
+    });
+
+    // Initialize auth
+    initAuth();
+});
 // Make debug function available globally
 window.debugApp = debugApp;
 window.clearFilter = clearFilter;

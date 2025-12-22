@@ -255,7 +255,117 @@
 
   </div>
 </div>
+<!-- Register Modal -->
+<div class="modal" id="registerModal">
+    <div class="modal-content cyber-modal-content">
+        <div class="modal-header">
+            <h2><i class="fas fa-user-plus"></i> CREATE ACCOUNT</h2>
+            <button class="modal-close" onclick="closeRegisterModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <form id="registerForm" class="auth-form">
+            <!-- Username Field -->
+            <div class="form-group">
+                <div class="input-icon">
+                    <i class="fas fa-user"></i>
+                    <input type="text" id="registerUsername" class="cyber-input" 
+                           placeholder="USERNAME (3-20 characters)" 
+                           required 
+                           oninput="validateUsername(this.value)" />
+                </div>
+                <div class="input-hint">Letters, numbers, and underscores only</div>
+                <div class="error-message" id="usernameError"></div>
+            </div>
+            
+            <!-- Email Field -->
+            <div class="form-group">
+                <div class="input-icon">
+                    <i class="fas fa-envelope"></i>
+                    <input type="email" id="registerEmail" class="cyber-input" 
+                           placeholder="EMAIL" 
+                           required 
+                           oninput="validateEmail(this.value)" />
+                </div>
+                <div class="error-message" id="emailError"></div>
+            </div>
+            
+            <!-- Password Field -->
+            <div class="form-group">
+                <div class="input-icon">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="registerPassword" class="cyber-input" 
+                           placeholder="PASSWORD (minimum 6 characters)" 
+                           required 
+                           oninput="validatePassword(this.value)" />
+                </div>
+                <div class="password-strength">
+                    <div class="strength-meter">
+                        <div class="strength-bar" id="strengthBar"></div>
+                    </div>
+                    <div class="password-requirements">
+                        <p><i class="fas fa-info-circle"></i> Password must contain:</p>
+                        <ul>
+                            <li id="reqLength"><i class="fas fa-circle"></i> At least 6 characters</li>
+                            <li id="reqUppercase"><i class="fas fa-circle"></i> One uppercase letter</li>
+                            <li id="reqLowercase"><i class="fas fa-circle"></i> One lowercase letter</li>
+                            <li id="reqNumber"><i class="fas fa-circle"></i> One number</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="error-message" id="passwordError"></div>
+            </div>
+            
+            <!-- Confirm Password Field -->
+            <div class="form-group">
+                <div class="input-icon">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="registerConfirm" class="cyber-input" 
+                           placeholder="CONFIRM PASSWORD" 
+                           required 
+                           oninput="validateConfirmPassword(this.value)" />
+                </div>
+                <div class="error-message" id="confirmError"></div>
+            </div>
+            
+            <!-- Terms Agreement -->
+            <div class="form-group terms-group">
+                <label class="checkbox-container">
+                    <input type="checkbox" id="acceptTerms" required>
+                    <span class="checkmark"></span>
+                    I agree to the <a href="#" class="terms-link">Terms of Service</a> and <a href="#" class="terms-link">Privacy Policy</a>
+                </label>
+                <div class="error-message" id="termsError"></div>
+            </div>
+            
+            <!-- Submit Button -->
+            <button type="submit" class="cyber-btn primary full-width">
+                <i class="fas fa-user-plus"></i> CREATE ACCOUNT
+            </button>
+        </form>
+        
+        <!-- Login Link -->
+        <div class="auth-switch">
+            <p>Already have an account? <a href="#" onclick="switchToLogin()" class="cyber-link">Login here</a></p>
+        </div>
+    </div>
+</div>
 
+<!-- Success Modal -->
+<div class="modal" id="successModal">
+    <div class="modal-content cyber-modal-content success">
+        <div class="success-icon">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        <h2>ACCOUNT CREATED!</h2>
+        <p>Your account has been created successfully.</p>
+        <p>You can now login with your credentials.</p>
+        <button class="cyber-btn primary" onclick="closeSuccessModal()">
+            <i class="fas fa-check"></i> GOT IT
+        </button>
+    </div>
+</div>
     <!-- Footer -->
     <footer class="cyber-footer">
         <div class="footer-content">

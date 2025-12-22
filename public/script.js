@@ -658,7 +658,377 @@ document.querySelector('.contact-form').addEventListener('submit', function (e) 
 
 //login page
 
+// ============ REGISTER MODAL FUNCTIONS ============
 
+// Open register modal
+function openRegisterModal() {
+    const modal = document.getElementById('registerModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        document.getElementById('registerUsername').focus();
+        clearRegisterErrors();
+        resetPasswordStrength();
+    }
+}
+
+// Close register modal
+function closeRegisterModal() {
+    const modal = document.getElementById('registerModal');
+    if (modal) {
+        modal.style.display = 'none';
+        document.getElementById('registerForm').reset();
+        clearRegisterErrors();
+        resetPasswordStrength();
+    }
+}
+
+// Show success modal
+function showSuccessModal(message) {
+    const modal = document.getElementById('successModal');
+    if (modal) {
+        modal.style.display = 'flex';
+    }
+}
+
+// Close success modal
+function closeSuccessModal() {
+    const modal = document.getElementById('successModal');
+    if (modal) {
+        modal.style.display = 'none';
+        closeRegisterModal();
+    }
+}
+
+// Switch to login (if you have login modal)
+function switchToLogin() {
+    closeRegisterModal();
+    // If you have login modal, open it here
+    // openLoginModal();
+}
+
+// Clear all error messages
+function clearRegisterErrors() {
+    const errors = ['usernameError', 'emailError', 'passwordError', 'confirmError', 'termsError'];
+    errors.forEach(id => {
+        const errorElement = document.getElementById(id);
+        if (errorElement) {
+            errorElement.textContent = '';
+            errorElement.style.display = 'none';
+        }
+    });
+}
+
+// Show error message
+function showRegisterError(elementId, message) {
+    const errorElement = document.getElementById(elementId);
+    if (errorElement) {
+        errorElement.textContent = message;
+        errorElement.style.display = 'block';
+    }
+}
+
+// Hide error message
+function hideRegisterError(elementId) {
+    const errorElement = document.getElementById(elementId);
+    if (errorElement) {
+        errorElement.style.display = 'none';
+    }
+}
+
+// ============ VALIDATION FUNCTIONS ============
+
+// Username validation
+function validateUsername(username) {
+    const errorElement = document.getElementById('usernameError');
+    
+    if (!username || username.trim().length === 0) {
+        showRegisterError('usernameError', 'Username is required');
+        return false;
+    }
+    
+    if (username.length < 3 || username.length > 20) {
+        showRegisterError('usernameError', 'Username must be 3-20 characters');
+        return false;
+    }
+    
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+        showRegisterError('usernameError', 'Username can only contain letters, numbers, and underscores');
+        return false;
+    }
+    
+    hideRegisterError('usernameError');
+    return true;
+}
+
+// Email validation
+function validateEmail(email) {
+    const errorElement = document.getElementById('emailError');
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    
+    if (!email || email.trim().length === 0) {
+        showRegisterError('emailError', 'Email is required');
+        return false;
+    }
+    
+    if (!emailRegex.test(email)) {
+        showRegisterError('emailError', 'Please enter a valid email address');
+        return false;
+    }
+    
+    hideRegisterError('emailError');
+    return true;
+}
+
+// Password validation
+function validatePassword(password) {
+    const errorElement = document.getElementById('passwordError');
+    
+    if (!password) {
+        showRegisterError('passwordError', 'Password is required');
+        resetPasswordStrength();
+        return false;
+    }
+    
+    // Check requirements
+    const hasMinLength = password.length >= 6;
+    const hasUppercase = /[A-Z]/.test(password);
+    const hasLowercase = /[a-z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    
+    // Update requirements display
+    updateRequirement('reqLength', hasMinLength);
+    updateRequirement('reqUppercase', hasUppercase);
+    updateRequirement('reqLowercase', hasLowercase);
+    updateRequirement('reqNumber', hasNumber);
+    
+    // Calculate password strength
+    let strength = 0;
+    if (hasMinLength) strength += 25;
+    if (hasUppercase) strength += 25;
+    if (hasLowercase) strength += 25;
+    if (hasNumber) strength += 25;
+    
+    updatePasswordStrength(strength);
+    
+    if (!hasMinLength) {
+        showRegisterError('passwordError', 'Password must be at least 6 characters');
+        return false;
+    }
+    
+    hideRegisterError('passwordError');
+    return true;
+}
+
+// Confirm password validation
+function validateConfirmPassword(confirmPassword) {
+    const password = document.getElementById('registerPassword').value;
+    const errorElement = document.getElementById('confirmError');
+    
+    if (!confirmPassword) {
+        showRegisterError('confirmError', 'Please confirm your password');
+        return false;
+    }
+    
+    if (password !== confirmPassword) {
+        showRegisterError('confirmError', 'Passwords do not match');
+        return false;
+    }
+    
+    hideRegisterError('confirmError');
+    return true;
+}
+
+// Update requirement display
+function updateRequirement(elementId, isValid) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        if (isValid) {
+            element.classList.remove('invalid');
+            element.classList.add('valid');
+            element.querySelector('i').className = 'fas fa-check-circle';
+        } else {
+            element.classList.remove('valid');
+            element.classList.add('invalid');
+            element.querySelector('i').className = 'fas fa-circle';
+        }
+    }
+}
+
+// Update password strength meter
+function updatePasswordStrength(strength) {
+    const strengthBar = document.getElementById('strengthBar');
+    if (strengthBar) {
+        strengthBar.style.width = `${strength}%`;
+        
+        if (strength < 50) {
+            strengthBar.className = 'strength-bar weak';
+        } else if (strength < 75) {
+            strengthBar.className = 'strength-bar medium';
+        } else {
+            strengthBar.className = 'strength-bar strong';
+        }
+    }
+}
+
+// Reset password strength
+function resetPasswordStrength() {
+    const requirements = ['reqLength', 'reqUppercase', 'reqLowercase', 'reqNumber'];
+    requirements.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.classList.remove('valid');
+            element.classList.add('invalid');
+            element.querySelector('i').className = 'fas fa-circle';
+        }
+    });
+    
+    const strengthBar = document.getElementById('strengthBar');
+    if (strengthBar) {
+        strengthBar.style.width = '0%';
+        strengthBar.className = 'strength-bar';
+    }
+}
+
+// ============ FORM SUBMISSION ============
+
+// Handle register form submission
+async function submitRegisterForm(event) {
+    event.preventDefault();
+    
+    // Get form values
+    const username = document.getElementById('registerUsername').value.trim();
+    const email = document.getElementById('registerEmail').value.trim();
+    const password = document.getElementById('registerPassword').value;
+    const confirmPassword = document.getElementById('registerConfirm').value;
+    const acceptTerms = document.getElementById('acceptTerms').checked;
+    
+    // Validate all fields
+    const isUsernameValid = validateUsername(username);
+    const isEmailValid = validateEmail(email);
+    const isPasswordValid = validatePassword(password);
+    const isConfirmValid = validateConfirmPassword(confirmPassword);
+    
+    if (!acceptTerms) {
+        showRegisterError('termsError', 'You must accept the terms and conditions');
+        return;
+    } else {
+        hideRegisterError('termsError');
+    }
+    
+    // Check if all validations pass
+    if (!isUsernameValid || !isEmailValid || !isPasswordValid || !isConfirmValid) {
+        showNotification('Please fix the errors in the form', 'error');
+        return;
+    }
+    
+    // Show loading state
+    const submitBtn = event.target.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> CREATING ACCOUNT...';
+    submitBtn.disabled = true;
+    
+    try {
+        // Send registration request to your backend
+        const response = await fetch('/auth/register', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                username: username,
+                email: email,
+                password: password
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+            // Registration successful
+            showSuccessModal();
+            showNotification('Account created successfully!', 'success');
+            
+            // Optional: Auto-login after registration
+            // await login(email, password);
+            
+        } else {
+            // Registration failed
+            const errorMessage = data.error || 'Registration failed. Please try again.';
+            showNotification(errorMessage, 'error');
+            
+            // Show specific error if available
+            if (data.error && data.error.includes('email')) {
+                showRegisterError('emailError', 'Email already exists');
+            } else if (data.error && data.error.includes('username')) {
+                showRegisterError('usernameError', 'Username already taken');
+            }
+        }
+        
+    } catch (error) {
+        console.error('Registration error:', error);
+        showNotification('Network error. Please try again.', 'error');
+    } finally {
+        // Restore button state
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    }
+}
+
+// ============ EVENT LISTENERS ============
+
+// Setup register form event listener
+function setupRegisterForm() {
+    const registerForm = document.getElementById('registerForm');
+    if (registerForm) {
+        registerForm.addEventListener('submit', submitRegisterForm);
+    }
+}
+
+// Close modal when clicking outside
+window.addEventListener('click', function(event) {
+    const registerModal = document.getElementById('registerModal');
+    const successModal = document.getElementById('successModal');
+    
+    if (event.target === registerModal) {
+        closeRegisterModal();
+    }
+    
+    if (event.target === successModal) {
+        closeSuccessModal();
+    }
+});
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeRegisterModal();
+        closeSuccessModal();
+    }
+});
+
+// ============ INITIALIZATION ============
+
+// Add to your DOMContentLoaded event
+document.addEventListener('DOMContentLoaded', function() {
+    setupRegisterForm();
+    
+    // Update your register button to open the modal
+    const registerLink = document.querySelector('a[onclick*="register"]');
+    if (registerLink) {
+        registerLink.onclick = function(e) {
+            e.preventDefault();
+            openRegisterModal();
+        };
+    }
+});
+
+// Make functions globally available
+window.openRegisterModal = openRegisterModal;
+window.closeRegisterModal = closeRegisterModal;
+window.validateUsername = validateUsername;
+window.validateEmail = validateEmail;
+window.validatePassword = validatePassword;
+window.validateConfirmPassword = validateConfirmPassword;
 
 
 

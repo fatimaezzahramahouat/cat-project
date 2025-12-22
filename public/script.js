@@ -661,7 +661,351 @@ document.querySelector('.contact-form').addEventListener('submit', function (e) 
 
 
 
+// ============ MODAL FUNCTIONS ============
 
+// Open Login Modal
+function openLoginModal() {
+    closeAllModals();
+    document.getElementById('loginModal').style.display = 'flex';
+    document.getElementById('loginEmail').focus();
+}
+
+// Close Login Modal
+function closeLoginModal() {
+    document.getElementById('loginModal').style.display = 'none';
+    document.getElementById('loginForm').reset();
+}
+
+// Open Register Modal
+function openRegisterModal() {
+    closeAllModals();
+    document.getElementById('registerModal').style.display = 'flex';
+    document.getElementById('registerUsername').focus();
+}
+
+// Close Register Modal
+function closeRegisterModal() {
+    document.getElementById('registerModal').style.display = 'none';
+    document.getElementById('registerForm').reset();
+}
+
+// Switch between modals
+function switchToRegister() {
+    closeLoginModal();
+    setTimeout(() => openRegisterModal(), 300);
+}
+
+function switchToLogin() {
+    closeRegisterModal();
+    setTimeout(() => openLoginModal(), 300);
+}
+
+// Success Modal
+function showSuccessModal(message) {
+    document.getElementById('successMessage').textContent = message;
+    document.getElementById('successModal').style.display = 'flex';
+}
+
+function closeSuccessModal() {
+    document.getElementById('successModal').style.display = 'none';
+}
+
+// Close all modals
+function closeAllModals() {
+    closeLoginModal();
+    closeRegisterModal();
+    closeSuccessModal();
+}
+
+// Close modal when clicking outside
+window.addEventListener('click', function (event) {
+    const modals = ['loginModal', 'registerModal', 'successModal'];
+    modals.forEach(modalId => {
+        const modal = document.getElementById(modalId);
+        if (event.target === modal) {
+            if (modalId === 'loginModal') closeLoginModal();
+            if (modalId === 'registerModal') closeRegisterModal();
+            if (modalId === 'successModal') closeSuccessModal();
+        }
+    });
+});
+
+// Close modal with Escape key
+document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape') {
+        closeAllModals();
+    }
+});
+
+// ============ FORM HANDLING ============
+
+// Setup form event listeners
+function setupAuthForms() {
+    // Login Form
+    document.getElementById('loginForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const email = document.getElementById('loginEmail').value.trim();
+        const password = document.getElementById('loginPassword').value;
+
+        if (!email || !password) {
+            showNotification('⚠️ Please fill in all fields', 'warning');
+            return;
+        }
+
+        showNotification('Logging in...', 'info');
+
+        try {
+            const success = await login(email, password);
+            if (success) {
+                closeLoginModal();
+                showSuccessModal('Welcome back! You have successfully logged in.');
+                // Optional: Redirect to dashboard
+                setTimeout(() => navigateToDashboard(), 1500);
+            }
+        } catch (error) {
+            console.error('Login error:', error);
+        }
+    });
+
+    // Register Form
+    document.getElementById('registerForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const username = document.getElementById('registerUsername').value.trim();
+        const email = document.getElementById('registerEmail').value.trim();
+        const password = document.getElementById('registerPassword').value;
+        const confirmPassword = document.getElementById('registerConfirm').value;
+
+        // Validation
+        if (!username || !email || !password || !confirmPassword) {
+            showNotification('⚠️ Please fill in all fields', 'warning');
+            return;
+        }
+
+        if (username.length < 3 || username.length > 20) {
+            showNotification('⚠️ Username must be 3-20 characters', 'warning');
+            return;
+        }
+
+        if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+            showNotification('⚠️ Username can only contain letters, numbers and underscores', 'warning');
+            return;
+        }
+
+        if (password.length < 6) {
+            showNotification('⚠️ Password must be at least 6 characters', 'warning');
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            showNotification('⚠️ Passwords do not match', 'warning');
+            return;
+        }
+
+        if (!document.getElementById('acceptTerms').checked) {
+            showNotification('⚠️ Please accept the terms and conditions', 'warning');
+            return;
+        }
+
+        showNotification('Creating account...', 'info');
+
+        try {
+            const success = await register(username, email, password);
+            if (success) {
+                closeRegisterModal();
+                showSuccessModal('Account created successfully! You can now login.');
+                // Auto-open login modal after success
+                setTimeout(() => openLoginModal(), 1500);
+            }
+        } catch (error) {
+            console.error('Registration error:', error);
+        }
+    });
+}
+
+// ============ AUTH FUNCTIONS ============
+
+async function login(email, password) {
+    try {
+        const response = await fetch('/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ email, password })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            showNotification('✅ Login successful!', 'success');
+            await checkAuthStatus();
+            return true;
+        } else {
+            showNotification(`❌ ${data.error || 'Login failed'}`, 'error');
+            return false;
+        }
+    } catch (error) {
+        console.error('Login error:', error);
+        showNotification('❌ Network error. Please try again.', 'error');
+        return false;
+    }
+}
+
+async function register(username, email, password) {
+    try {
+        const response = await fetch('/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, email, password })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            showNotification('✅ Registration successful!', 'success');
+            return true;
+        } else {
+            showNotification(`❌ ${data.error || 'Registration failed'}`, 'error');
+            return false;
+        }
+    } catch (error) {
+        console.error('Registration error:', error);
+        showNotification('❌ Network error. Please try again.', 'error');
+        return false;
+    }
+}
+
+// ============ UPDATE EXISTING FUNCTIONS ============
+
+// Update your existing checkAuthStatus function
+async function checkAuthStatus() {
+    try {
+        const response = await fetch('/api/me', {
+            credentials: 'include'
+        });
+
+        if (response.ok) {
+            const userData = await response.json();
+            currentUser = userData;
+            updateUIForLoggedInUser(userData);
+            return true;
+        } else {
+            currentUser = null;
+            updateUIForLoggedOutUser();
+            return false;
+        }
+    } catch (error) {
+        console.error('Auth check failed:', error);
+        currentUser = null;
+        updateUIForLoggedOutUser();
+        return false;
+    }
+}
+
+function updateUIForLoggedInUser(user) {
+    // Hide auth buttons
+    const authButtons = document.getElementById('authButtons');
+    if (authButtons) authButtons.style.display = 'none';
+
+    // Show user menu
+    const userMenu = document.getElementById('userMenu');
+    if (userMenu) {
+        userMenu.style.display = 'block';
+        document.getElementById('userGreeting').textContent = user.username;
+    }
+
+    // Show Add Cat button
+    const addCatBtn = document.getElementById('addCatBtn');
+    if (addCatBtn) {
+        addCatBtn.style.display = 'inline-block';
+    }
+}
+
+function updateUIForLoggedOutUser() {
+    // Show auth buttons
+    const authButtons = document.getElementById('authButtons');
+    if (authButtons) authButtons.style.display = 'flex';
+
+    // Hide user menu
+    const userMenu = document.getElementById('userMenu');
+    if (userMenu) userMenu.style.display = 'none';
+
+    // Hide Add Cat button
+    const addCatBtn = document.getElementById('addCatBtn');
+    if (addCatBtn) {
+        addCatBtn.style.display = 'none';
+    }
+}
+
+// Navigation to dashboard
+function navigateToDashboard() {
+    // Hide all sections
+    document.querySelectorAll('.cyber-section').forEach(section => {
+        section.classList.remove('active');
+    });
+
+    // Create or show dashboard
+    let dashboard = document.getElementById('dashboard');
+    if (!dashboard) {
+        dashboard = createDashboardSection();
+        document.querySelector('.cyber-main-container').appendChild(dashboard);
+    }
+
+    dashboard.classList.add('active');
+    loadMyCats(); // Load user's cats
+}
+
+function createDashboardSection() {
+    const section = document.createElement('section');
+    section.id = 'dashboard';
+    section.className = 'cyber-section';
+    section.innerHTML = `
+        <div class="terminal-header">
+            <h1><i class="fas fa-user-circle"></i> DASHBOARD</h1>
+            <p>Welcome back, <span class="username-highlight">${currentUser?.username || 'User'}</span>!</p>
+            <div class="terminal-status">
+                <span class="status-dot online"></span>
+                USER: ${currentUser?.role?.toUpperCase() || 'USER'}
+            </div>
+        </div>
+        
+        <div class="dashboard-content" id="dashboardContent">
+            <div class="loading">Loading dashboard...</div>
+        </div>
+    `;
+    return section;
+}
+
+// ============ INITIALIZATION ============
+
+// Add to your existing DOMContentLoaded
+document.addEventListener('DOMContentLoaded', function () {
+    console.log("📄 DOM loaded, initializing Cat Gallery...");
+
+    // Setup auth forms
+    setupAuthForms();
+
+    // Check authentication status
+    checkAuthStatus().then(isAuthenticated => {
+        console.log("🔐 Auth status:", isAuthenticated ? "Logged in" : "Not logged in");
+
+        // Load initial data
+        loadCats();
+        fetchTags();
+    });
+
+    setupEventListeners();
+});
+
+// Make functions globally available
+window.openLoginModal = openLoginModal;
+window.openRegisterModal = openRegisterModal;
+window.closeLoginModal = closeLoginModal;
+window.closeRegisterModal = closeRegisterModal;
+window.switchToLogin = switchToLogin;
+window.switchToRegister = switchToRegister;
+window.navigateToDashboard = navigateToDashboard;
 
 
 

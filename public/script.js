@@ -900,7 +900,7 @@ async function submitRegisterForm(event) {
     const email = document.getElementById('registerEmail').value.trim();
     const password = document.getElementById('registerPassword').value;
     const confirmPassword = document.getElementById('registerConfirm').value;
-    const acceptTerms = document.getElementById('acceptTerms').checked;
+    
     
     // Validate all fields
     const isUsernameValid = validateUsername(username);
@@ -908,17 +908,13 @@ async function submitRegisterForm(event) {
     const isPasswordValid = validatePassword(password);
     const isConfirmValid = validateConfirmPassword(confirmPassword);
     
-    if (!acceptTerms) {
-        showRegisterError('termsError', 'You must accept the terms and conditions');
-        return;
-    } else {
-        hideRegisterError('termsError');
-    }
+   
+
     
     // Check if all validations pass
-    if (!isUsernameValid || !isEmailValid || !isPasswordValid || !isConfirmValid) {
-        showNotification('Please fix the errors in the form', 'error');
-        return;
+    if (!isUsernameValid || !isEmailValid || !isPasswordValid ) {
+       showNotification('Please fix the errors in the form', 'error');
+        return; 
     }
     
     // Show loading state

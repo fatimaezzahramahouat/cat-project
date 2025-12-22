@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+const API_URL = "/cats";  // Use relative path for same origin
 
 export default {
     async fetch(request, env) {

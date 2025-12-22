@@ -1,274 +1,90 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Cat Gallery</title>
-    <link rel="stylesheet" href="style.css" />
-    <!-- Font Awesome -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>معرض القطط</title>
+    <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Share+Tech+Mono&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 </head>
-
 <body class="cyber-theme">
 
-    <!-- Navigation Bar -->
+    <!-- شريط التنقل -->
     <nav class="cyber-nav">
         <div class="cyber-nav-container">
-            <!-- Logo -->
+            <!-- الشعار -->
             <div class="cyber-logo">
                 <i class="fas fa-terminal"></i>
                 <span class="logo-text">Cat<span class="logo-highlight">tEY</span></span>
             </div>
 
-            <!-- Navigation Links -->
+            <!-- روابط التنقل -->
             <ul class="cyber-nav-links">
-                <li><a href="#home" class="cyber-nav-link active"><i class="fas fa-home"></i> HOME</a></li>
-                <li><a href="#about" class="cyber-nav-link"><i class="fas fa-info-circle"></i> ABOUT</a></li>
-                <li><a href="#contact" class="cyber-nav-link"><i class="fas fa-envelope"></i> CONTACT</a></li>
-                <li>
-  <a href="#" class="cyber-nav-link" onclick="openAuthModal('login')">
-    <i class="fas fa-sign-in-alt"></i> LOGIN
-  </a>
-</li>
-<li>
-  <a href="#" class="cyber-nav-link" onclick="openAuthModal('register')">
-    <i class="fas fa-user-plus"></i> REGISTER
-  </a>
-</li>
+                <li><a href="/" class="cyber-nav-link active"><i class="fas fa-home"></i> الرئيسية</a></li>
+                <li><a href="#about" class="cyber-nav-link"><i class="fas fa-info-circle"></i> من نحن</a></li>
+                <li><a href="#contact" class="cyber-nav-link"><i class="fas fa-envelope"></i> اتصل بنا</a></li>
+                
+                <!-- أزرار المصادقة (تظهر عند تسجيل الخروج) -->
+                <li id="authButtons" class="auth-buttons">
+                    <button id="loginBtn" class="cyber-btn login-btn">
+                        <i class="fas fa-sign-in-alt"></i> تسجيل الدخول
+                    </button>
+                    <button id="signupBtn" class="cyber-btn signup-btn">
+                        <i class="fas fa-user-plus"></i> إنشاء حساب
+                    </button>
+                </li>
+                
+                <!-- قائمة المستخدم (تظهر عند تسجيل الدخول) -->
+                <li id="userMenu" class="user-menu" style="display: none;">
+                    <button class="user-btn">
+                        <i class="fas fa-user-circle"></i>
+                        <span id="usernameDisplay">المستخدم</span>
+                        <i class="fas fa-caret-down"></i>
+                    </button>
+                    <div class="user-dropdown">
+                        <button id="dashboardBtn" class="dropdown-item">
+                            <i class="fas fa-tachometer-alt"></i> لوحة التحكم
+                        </button>
+                        <div class="dropdown-divider"></div>
+                        <button class="dropdown-item logout" onclick="logout()">
+                            <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
+                        </button>
+                    </div>
+                </li>
             </ul>
-
-
-
         </div>
     </nav>
 
-    <!-- Main Content -->
-    <div class="cyber-main-container">
+    <!-- المحتوى الرئيسي -->
+    <main class="cyber-main-container">
+        <!-- محتوى الصفحة الرئيسية هنا -->
+    </main>
 
-        <!-- Home Section (Cat Gallery) -->
-        <section id="home" class="cyber-section active">
-            <div class="terminal-header">
-                <h1><i class="fas fa-terminal"></i> CAT GALLERY</h1>
-                <p>Where every cat has a story to tell</p>
-                <div class="terminal-status">
-                    <span class="status-dot online"></span>
-                    SYSTEM ONLINE
-                </div>
-            </div>
-
-            <!-- Search & Filter Controls -->
-            <div class="controls-panel">
-                <div class="search-field">
-                    <i class="fas fa-search"></i>
-                    <input type="text" id="searchInput" placeholder="SEARCH CATS..." class="cyber-input" />
-                </div>
-
-                <div class="filter-field">
-                    <i class="fas fa-filter"></i>
-                    <select id="tag-filter" class="cyber-select">
-                        <option value="">ALL TAGS</option>
-                    </select>
-                </div>
-
-                <button id="addCatBtn" class="cyber-btn primary">
-                    <i class="fas fa-plus"></i> ADD CAT
-                </button>
-            </div>
-
-            <!-- Gallery -->
-            <div class="gallery-header">
-                <h2><i class="fas fa-cat"></i> FELINE DATABASE</h2>
-                <div class="gallery-stats">
-                    <span class="stat">
-                        <i class="fas fa-database"></i>
-                        <span id="catCount">0</span> CATS LOADED
-                    </span>
-                </div>
-            </div>
-
-            <main class="gallery" id="catGallery">
-                <!-- Cats will be loaded here -->
-            </main>
-
-            <!-- Pagination -->
-            <div id="pagination" class="pagination"></div>
-        </section>
-
-        <!-- About Section -->
-        <section id="about" class="cyber-section">
-            <div class="terminal-header">
-                <h1><i class="fas fa-terminal"></i> ABOUT OUR SOCIETY</h1>
-            </div>
-
-            <div class="about-content">
-                <div class="about-card">
-                    <div class="about-icon">
-                        <i class="fas fa-shield-alt"></i>
-                    </div>
-                    <h3>OUR MISSION</h3>
-                    <p>We are a passionate community dedicated to celebrating and sharing the joy of cats from around
-                        the world. Our mission is to create a purrfect space where cat lovers can connect, share their
-                        feline friends, and discover amazing cats.</p>
-                </div>
-
-                <div class="about-card">
-                    <div class="about-icon">
-                        <i class="fas fa-users"></i>
-                    </div>
-                    <h3>OUR COMMUNITY</h3>
-                    <p>Join our growing family of cat enthusiasts, photographers, and pet lovers! Share stories,
-                        exchange tips, and connect with fellow cat parents. Whether you're a first-time kitten owner or
-                        a seasoned cat expert, there's a place for you here.</p>
-                </div>
-
-                <div class="about-card">
-                    <div class="about-icon">
-                        <i class="fas fa-code"></i>
-                    </div>
-                    <h3>OUR FEATURES</h3>
-                    <p>Explore our interactive gallery, share your cat's photos, create personalized profiles, and
-                        discover cats by breed, personality, or location. From fluffy Persians to playful Bengals, every
-                        cat has a story to tell.</p>
-                </div>
-
-                <div class="about-card">
-                    <div class="about-icon">
-                        <i class="fas fa-lock"></i>
-                    </div>
-                    <h3>CAT-FIRST DESIGN</h3>
-                    <p>We've built everything with cats in mind! Easy uploads, fun tags, and a purrfect browsing
-                        experience. Because when it comes to cats, only the best will do</p>
-                </div>
-            </div>
-
-            <div class="about-details">
-                <h3><i class="fas fa-terminal"></i> SOCIETY INFORMATION</h3>
-                <div class="info-grid">
-                    <div class="info-item">
-                        <span class="info-label">FOUNDED:</span>
-                        <span class="info-value">2024</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">MEMBERS:</span>
-                        <span class="info-value">1000+</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">LOCATION:</span>
-                        <span class="info-value"> CAT LOVERS WORLDWIDE</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label"></span>
-                        <span class="info-value">❤️ ADORABLE LEVEL: MAX</span>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Contact Section -->
-        <section id="contact" class="cyber-section">
-            <div class="terminal-header">
-                <h1><i class="fas fa-terminal"></i> CONTACT US</h1>
-            </div>
-
-            <div class="contact-container">
-                <div class="contact-info">
-                    <div class="contact-card">
-                        <i class="fas fa-envelope"></i>
-                        <h3>EMAIL</h3>
-                        <p>contact@cattey.com</p>
-                    </div>
-                    <div class="contact-card">
-                        <i class="fas fa-phone"></i>
-                        <h3>PHONE</h3>
-                        <p>+1 (555) 123-4567</p>
-                    </div>
-                    <div class="contact-card">
-                        <i class="fas fa-map-marker-alt"></i>
-                        <h3>ADDRESS</h3>
-                        <p>Cat category</p>
-                    </div>
-                </div>
-
-                <form class="contact-form">
-                    <h3><i class="fas fa-paper-plane"></i> SEND MESSAGE</h3>
-
-                    <div class="form-group">
-                        <label for="contact-name"><i class="fas fa-user"></i> NAME</label>
-                        <input type="text" id="contact-name" class="cyber-input" placeholder="ENTER YOUR NAME" />
-                    </div>
-
-                    <div class="form-group">
-                        <label for="contact-email"><i class="fas fa-envelope"></i> EMAIL</label>
-                        <input type="email" id="contact-email" class="cyber-input" placeholder="ENTER YOUR EMAIL" />
-                    </div>
-
-                    <div class="form-group">
-                        <label for="contact-subject"><i class="fas fa-tag"></i> SUBJECT</label>
-                        <input type="text" id="contact-subject" class="cyber-input" placeholder="ENTER SUBJECT" />
-                    </div>
-
-                    <div class="form-group">
-                        <label for="contact-message"><i class="fas fa-comment"></i> MESSAGE</label>
-                        <textarea id="contact-message" class="cyber-textarea" placeholder="ENTER YOUR MESSAGE"
-                            rows="5"></textarea>
-                    </div>
-
-                    <button type="submit" class="cyber-btn primary">
-                        <i class="fas fa-paper-plane"></i> SEND MESSAGE
-                    </button>
-                </form>
-            </div>
-        </section>
-
-
-
-
-    </div>
-
-    <!-- Cat Modal (Same as before) -->
-    <div class="modal" id="catModal">
+    <!-- نافذة المصادقة -->
+    <div class="modal" id="authModal">
         <div class="modal-content cyber-modal-content">
-            <h2><i class="fas fa-plus-circle"></i> ADD NEW CAT</h2>
-            <input type="text" id="name" placeholder="Cat Name" />
-            <input type="text" id="tag" placeholder="Tag (cute, funny...)" />
-            <input type="text" id="img" placeholder="Image URL" />
-            <textarea id="description" placeholder="Description"></textarea>
-            <div class="modal-actions">
-                <button id="addBtn" class="cyber-btn success" onclick="addCat()">
-                    <i class="fas fa-check"></i> ADD CAT
+            <div class="modal-header">
+                <h2 id="authModalTitle"><i class="fas fa-sign-in-alt"></i> تسجيل الدخول</h2>
+                <button class="modal-close" onclick="closeAuthModal()">
+                    <i class="fas fa-times"></i>
                 </button>
-                <button id="editBtn" class="cyber-btn primary" onclick="updateCat()">
-                    <i class="fas fa-save"></i> SAVE CHANGES
-                </button>
-                <button class="cyber-btn cancel" onclick="closeModal()">
-                    <i class="fas fa-times"></i> CANCEL
-                </button>
+            </div>
+            
+            <form id="authForm" class="auth-form">
+                <!-- سيتم تعبئة النموذج ديناميكياً -->
+            </form>
+            
+            <div class="auth-switch">
+                <span id="authSwitchText">ليس لديك حساب؟</span>
+                <a href="#" id="authSwitchLink" onclick="openAuthModal('register')" class="cyber-link">إنشاء حساب</a>
             </div>
         </div>
     </div>
 
-    </div>
-
-  </div>
-</div>
-
-    <!-- Footer -->
-    <footer class="cyber-footer">
-        <div class="footer-content">
-            <div class="footer-logo">
-                <i class="fas fa-terminal"></i>
-                <span>cat<span class="logo-highlight">tey</span></span>
-            </div>
-
-
-    </footer>
+    <!-- نافذة الإشعارات -->
+    <div id="notificationContainer"></div>
 
     <script src="script.js"></script>
-
 </body>
-
 </html>

@@ -1,692 +1,367 @@
-// ============ API CONFIGURATION ============
-// Use relative URL for your Cloudflare Worker
-const API_URL = "/cats";  // Changed from http://localhost:5000/cats
-const API_BASE = ""; // Same origin
+// ============ CONFIGURATION ============
+const API_BASE = '';
+let currentUser = null;
 
-// ============ DOM ELEMENTS ============
-const gallery = document.getElementById("catGallery");
-const modal = document.getElementById("catModal");
-let editingId = null;
-let catsData = [];
-let currentPage = 1;
-const itemsPerPage = 8;
-let currentTagFilter = '';
+// ============ AUTH FUNCTIONS ============
 
-// DOM elements
-const nameInput = document.getElementById("name");
-const tagInput = document.getElementById("tag");
-const descriptionInput = document.getElementById("description");
-const imgInput = document.getElementById("img");
-const searchInput = document.getElementById("searchInput");
-const tagFilter = document.getElementById("tag-filter");
+// فتح نافذة المصادقة
+function openAuthModal(type = 'login') {
+    const modal = document.getElementById('authModal');
+    if (!modal) return;
+    
+    const title = document.getElementById('authModalTitle');
+    const form = document.getElementById('authForm');
+    const switchText = document.getElementById('authSwitchText');
+    const switchLink = document.getElementById('authSwitchLink');
+    
+    if (type === 'login') {
+        title.textContent = 'تسجيل الدخول';
+        form.innerHTML = `
+            <div class="form-group">
+                <label for="authEmail"><i class="fas fa-envelope"></i> البريد الإلكتروني</label>
+                <input type="email" id="authEmail" class="cyber-input" placeholder="أدخل بريدك الإلكتروني" required />
+            </div>
+            <div class="form-group">
+                <label for="authPassword"><i class="fas fa-lock"></i> كلمة المرور</label>
+                <input type="password" id="authPassword" class="cyber-input" placeholder="أدخل كلمة المرور" required />
+            </div>
+            <button type="submit" class="cyber-btn primary full-width">
+                <i class="fas fa-sign-in-alt"></i> تسجيل الدخول
+            </button>
+        `;
+        switchText.textContent = 'ليس لديك حساب؟';
+        switchLink.textContent = 'إنشاء حساب';
+        switchLink.onclick = () => openAuthModal('register');
+    } else {
+        title.textContent = 'إنشاء حساب جديد';
+        form.innerHTML = `
+            <div class="form-group">
+                <label for="authUsername"><i class="fas fa-user"></i> اسم المستخدم</label>
+                <input type="text" id="authUsername" class="cyber-input" placeholder="اختر اسم مستخدم" required />
+            </div>
+            <div class="form-group">
+                <label for="authEmail"><i class="fas fa-envelope"></i> البريد الإلكتروني</label>
+                <input type="email" id="authEmail" class="cyber-input" placeholder="أدخل بريدك الإلكتروني" required />
+            </div>
+            <div class="form-group">
+                <label for="authPassword"><i class="fas fa-lock"></i> كلمة المرور</label>
+                <input type="password" id="authPassword" class="cyber-input" placeholder="أدخل كلمة مرور قوية" required minlength="6" />
+            </div>
+            <div class="form-group">
+                <label for="authConfirm"><i class="fas fa-lock"></i> تأكيد كلمة المرور</label>
+                <input type="password" id="authConfirm" class="cyber-input" placeholder="أعد إدخال كلمة المرور" required minlength="6" />
+            </div>
+            <button type="submit" class="cyber-btn primary full-width">
+                <i class="fas fa-user-plus"></i> إنشاء حساب
+            </button>
+        `;
+        switchText.textContent = 'لديك حساب بالفعل؟';
+        switchLink.textContent = 'تسجيل الدخول';
+        switchLink.onclick = () => openAuthModal('login');
+    }
+    
+    modal.style.display = 'flex';
+}
+
+// إغلاق نافذة المصادقة
+function closeAuthModal() {
+    const modal = document.getElementById('authModal');
+    if (modal) {
+        modal.style.display = 'none';
+        document.getElementById('authForm').reset();
+    }
+}
+
+// إرسال نموذج المصادقة
+async function submitAuth(event) {
+    event.preventDefault();
+    
+    const type = document.getElementById('authModalTitle').textContent === 'تسجيل الدخول' ? 'login' : 'register';
+    
+    if (type === 'login') {
+        const email = document.getElementById('authEmail').value.trim();
+        const password = document.getElementById('authPassword').value;
+        
+        if (!email || !password) {
+            showNotification('⚠️ المرجو إدخال جميع الحقول', 'warning');
+            return;
+        }
+        
+        await login(email, password);
+    } else {
+        const username = document.getElementById('authUsername').value.trim();
+        const email = document.getElementById('authEmail').value.trim();
+        const password = document.getElementById('authPassword').value;
+        const confirmPassword = document.getElementById('authConfirm').value;
+        
+        if (!username || !email || !password || !confirmPassword) {
+            showNotification('⚠️ المرجو إدخال جميع الحقول', 'warning');
+            return;
+        }
+        
+        if (password !== confirmPassword) {
+            showNotification('⚠️ كلمتا المرور غير متطابقتين', 'warning');
+            return;
+        }
+        
+        if (password.length < 6) {
+            showNotification('⚠️ كلمة المرور يجب أن تكون 6 أحرف على الأقل', 'warning');
+            return;
+        }
+        
+        await register(username, email, password);
+    }
+}
+
+// تسجيل الدخول
+async function login(email, password) {
+    showNotification('جاري تسجيل الدخول...', 'info');
+    
+    try {
+        const response = await fetch('/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ email, password })
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification('✅ تم تسجيل الدخول بنجاح!', 'success');
+            closeAuthModal();
+            await checkAuth();
+        } else {
+            showNotification(`❌ ${data.error || 'فشل تسجيل الدخول'}`, 'error');
+        }
+    } catch (error) {
+        console.error('Login error:', error);
+        showNotification('❌ خطأ في الشبكة. المرجو المحاولة مرة أخرى.', 'error');
+    }
+}
+
+// تسجيل حساب جديد
+async function register(username, email, password) {
+    showNotification('جاري إنشاء الحساب...', 'info');
+    
+    try {
+        const response = await fetch('/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, email, password })
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification('✅ تم إنشاء الحساب بنجاح! المرجو تسجيل الدخول.', 'success');
+            openAuthModal('login');
+        } else {
+            showNotification(`❌ ${data.error || 'فشل إنشاء الحساب'}`, 'error');
+        }
+    } catch (error) {
+        console.error('Registration error:', error);
+        showNotification('❌ خطأ في الشبكة. المرجو المحاولة مرة أخرى.', 'error');
+    }
+}
+
+// تسجيل الخروج
+async function logout() {
+    try {
+        const response = await fetch('/auth/logout', {
+            method: 'POST',
+            credentials: 'include'
+        });
+
+        if (response.ok) {
+            currentUser = null;
+            updateUIForLoggedOutUser();
+            showNotification('✅ تم تسجيل الخروج بنجاح', 'success');
+            navigateToHome();
+        }
+    } catch (error) {
+        console.error('Logout error:', error);
+    }
+}
+
+// التحقق من حالة المصادقة
+async function checkAuth() {
+    try {
+        const response = await fetch('/api/me', {
+            credentials: 'include'
+        });
+        
+        if (response.ok) {
+            const userData = await response.json();
+            currentUser = userData;
+            updateUIForLoggedInUser(userData);
+            return true;
+        } else {
+            currentUser = null;
+            updateUIForLoggedOutUser();
+            return false;
+        }
+    } catch (error) {
+        console.error('Auth check failed:', error);
+        currentUser = null;
+        updateUIForLoggedOutUser();
+        return false;
+    }
+}
+
+// تحديث الواجهة عند تسجيل الدخول
+function updateUIForLoggedInUser(user) {
+    // تحديث شريط التنقل
+    const authButtons = document.getElementById('authButtons');
+    const userMenu = document.getElementById('userMenu');
+    const addCatBtn = document.getElementById('addCatBtn');
+    
+    if (authButtons) authButtons.style.display = 'none';
+    if (userMenu) {
+        userMenu.style.display = 'block';
+        document.getElementById('usernameDisplay').textContent = user.username;
+    }
+    if (addCatBtn) addCatBtn.style.display = 'inline-block';
+}
+
+// تحديث الواجهة عند تسجيل الخروج
+function updateUIForLoggedOutUser() {
+    const authButtons = document.getElementById('authButtons');
+    const userMenu = document.getElementById('userMenu');
+    const addCatBtn = document.getElementById('addCatBtn');
+    
+    if (authButtons) authButtons.style.display = 'flex';
+    if (userMenu) userMenu.style.display = 'none';
+    if (addCatBtn) addCatBtn.style.display = 'none';
+}
+
+// التنقل للوحة التحكم
+async function navigateToDashboard() {
+    try {
+        const response = await fetch('/dashboard', {
+            credentials: 'include'
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            showDashboard(data);
+        } else {
+            showNotification('⚠️ المرجو تسجيل الدخول للوصول للوحة التحكم', 'warning');
+            openAuthModal();
+        }
+    } catch (error) {
+        console.error('Dashboard error:', error);
+    }
+}
+
+function showDashboard(data) {
+    // تحديث الصفحة لعرض لوحة التحكم
+    const mainContainer = document.querySelector('.cyber-main-container');
+    if (!mainContainer) return;
+    
+    mainContainer.innerHTML = `
+        <section id="dashboard" class="cyber-section active">
+            <div class="terminal-header">
+                <h1><i class="fas fa-user-circle"></i> لوحة التحكم</h1>
+                <p>مرحباً بك، <span class="username-highlight">${data.user.username}</span>!</p>
+                <div class="terminal-status">
+                    <span class="status-dot online"></span>
+                    حالة: متصل
+                </div>
+            </div>
+            
+            <div class="dashboard-grid">
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <i class="fas fa-user"></i>
+                        <h3>معلومات الحساب</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="info-item">
+                            <span class="info-label">اسم المستخدم:</span>
+                            <span class="info-value">${data.user.username}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">البريد الإلكتروني:</span>
+                            <span class="info-value">${data.user.email}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <i class="fas fa-cat"></i>
+                        <h3>قططي</h3>
+                    </div>
+                    <div class="card-content">
+                        <div id="myCatsList" class="cats-list">
+                            ${data.cats.length > 0 ? 
+                                data.cats.map(cat => `
+                                    <div class="cat-item">
+                                        <h4>${cat.name}</h4>
+                                        <p>${cat.description || 'لا يوجد وصف'}</p>
+                                    </div>
+                                `).join('') :
+                                '<p class="no-data">لا توجد قطط بعد</p>'
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="dashboard-actions">
+                <button onclick="loadCats()" class="cyber-btn secondary">
+                    <i class="fas fa-sync"></i> تحديث القطط
+                </button>
+                <button onclick="logout()" class="cyber-btn danger">
+                    <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
+                </button>
+            </div>
+        </section>
+    `;
+}
+
+// التنقل للصفحة الرئيسية
+function navigateToHome() {
+    window.location.href = '/';
+}
 
 // ============ INITIALIZATION ============
-document.addEventListener('DOMContentLoaded', function () {
-    console.log("📄 DOM loaded, initializing Cat Gallery...");
-    console.log("🌐 API URL:", API_URL);
-
-    // Test API connection immediately
-    testAPI();
-
-    loadCats();
-    fetchTags();
-    setupEventListeners();
-});
-
-// ============ TEST API CONNECTION ============
-function testAPI() {
-    console.log("🔌 Testing API connection...");
-    fetch('/cats')
-        .then(res => {
-            console.log("API Response status:", res.status);
-            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-            return res.json();
-        })
-        .then(data => {
-            console.log("✅ API connection successful!");
-            console.log("First cat:", data[0]);
-        })
-        .catch(err => {
-            console.error('❌ API connection failed:', err);
-            showNotification('⚠️ Cannot connect to API. Make sure the Worker is deployed.', 'error');
-        });
-}
-
-// ============ LOAD CATS ============
-function loadCats() {
-    console.log("🐱 Loading cats from API:", API_URL);
-    showLoading();
-
-    fetch(API_URL)
-        .then(res => {
-            console.log("Load cats response:", res.status, res.statusText);
-            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-            return res.json();
-        })
-        .then(data => {
-            catsData = Array.isArray(data) ? data : [];
-            console.log(`✅ Loaded ${catsData.length} cats`);
-            hideLoading();
-            renderGallery(catsData);
-        })
-        .catch(err => {
-            console.error('❌ Error loading cats:', err);
-            hideLoading();
-            showError('Failed to load cats. Please check if the Worker is running.');
-        });
-}
-
-// ============ FETCH TAGS ============
-function fetchTags() {
-    console.log("🔄 Fetching tags from /tags...");
-
-    fetch('/tags')
-        .then(res => {
-            console.log("Tags response:", res.status);
-            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-            return res.json();
-        })
-        .then(tags => {
-            console.log("📋 Tags received:", tags);
-            populateTagFilter(tags);
-        })
-        .catch(err => {
-            console.error('❌ Error fetching tags:', err);
-            showErrorInTagFilter();
-        });
-}
-
-function populateTagFilter(tags) {
-    const tagFilter = document.getElementById('tag-filter');
-    if (!tagFilter) {
-        console.error("❌ Tag filter element not found!");
-        return;
-    }
-
-    // Save current selection
-    const currentSelection = tagFilter.value;
-
-    // Clear and add default option
-    tagFilter.innerHTML = '<option value="">All tags</option>';
-
-    if (Array.isArray(tags) && tags.length > 0) {
-        // Filter and sort tags
-        const validTags = tags
-            .filter(tag => tag && typeof tag === 'string' && tag.trim().length > 0)
-            .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
-
-        console.log(`✅ Adding ${validTags.length} tags to dropdown`);
-
-        validTags.forEach(tag => {
-            const option = document.createElement('option');
-            option.value = tag.trim();
-            option.textContent = tag.trim().charAt(0).toUpperCase() + tag.trim().slice(1);
-            tagFilter.appendChild(option);
-        });
-
-        // Restore previous selection
-        if (currentSelection && validTags.includes(currentSelection)) {
-            tagFilter.value = currentSelection;
-        }
-    } else {
-        console.warn("⚠️ No tags available");
-        const noTagsOption = document.createElement('option');
-        noTagsOption.value = "";
-        noTagsOption.textContent = "No tags available";
-        noTagsOption.disabled = true;
-        tagFilter.appendChild(noTagsOption);
-    }
-}
-
-function showErrorInTagFilter() {
-    const tagFilter = document.getElementById('tag-filter');
-    if (tagFilter) {
-        tagFilter.innerHTML = '';
-        const errorOption = document.createElement('option');
-        errorOption.value = "";
-        errorOption.textContent = "Error loading tags";
-        errorOption.disabled = true;
-        tagFilter.appendChild(errorOption);
-    }
-}
-
-// ============ FILTER BY TAG ============
-function filterCatsByTag(tag) {
-    console.log(`🔍 Filtering by tag: "${tag}"`);
-    currentTagFilter = tag;
-
-    let filteredCats;
-
-    if (!tag || tag === "") {
-        filteredCats = catsData;
-        console.log("🔄 Showing all cats");
-    } else {
-        filteredCats = catsData.filter(cat => {
-            const catTag = cat.tag ? cat.tag.trim().toLowerCase() : '';
-            return catTag === tag.toLowerCase();
-        });
-        console.log(`✅ Found ${filteredCats.length} cats with tag: "${tag}"`);
-    }
-
-    renderGallery(filteredCats);
-    updateFilterIndicator(tag);
-}
-
-function updateFilterIndicator(tag) {
-    const indicator = document.getElementById('filterIndicator');
-    if (!indicator) return;
-
-    if (tag && tag !== "") {
-        indicator.innerHTML = `
-            <span>Filtering by: <strong>${tag}</strong></span>
-            <button onclick="clearFilter()" class="clear-btn">Clear Filter</button>
-        `;
-        indicator.style.display = 'flex';
-    } else {
-        indicator.style.display = 'none';
-    }
-}
-
-function clearFilter() {
-    const tagFilter = document.getElementById('tag-filter');
-    if (tagFilter) {
-        tagFilter.value = '';
-        filterCatsByTag('');
-    }
-}
-
-// ============ SEARCH FUNCTIONALITY ============
-function setupSearch() {
-    if (!searchInput) return;
-
-    searchInput.addEventListener("input", () => {
-        const query = searchInput.value.toLowerCase();
-        const tagFilter = document.getElementById('tag-filter');
-        const selectedTag = tagFilter ? tagFilter.value : '';
-
-        let filteredCats = catsData;
-
-        // Apply tag filter first
-        if (selectedTag && selectedTag !== "") {
-            filteredCats = filteredCats.filter(cat => {
-                const catTag = cat.tag ? cat.tag.trim().toLowerCase() : '';
-                return catTag === selectedTag.toLowerCase();
-            });
-        }
-
-        // Apply search filter
-        if (query) {
-            filteredCats = filteredCats.filter(cat =>
-                (cat.name && cat.name.toLowerCase().includes(query)) ||
-                (cat.tag && cat.tag.toLowerCase().includes(query)) ||
-                (cat.description && cat.description.toLowerCase().includes(query))
-            );
-        }
-
-        renderGallery(filteredCats);
-    });
-}
-
-// ============ RENDER GALLERY ============
-function renderGallery(cats) {
-    if (!gallery) {
-        console.error("❌ Gallery element not found!");
-        return;
-    }
-
-    gallery.innerHTML = "";
-
-    if (!cats || cats.length === 0) {
-        gallery.innerHTML = '<div class="no-results">No cats found</div>';
-        renderPagination(cats.length);
-        return;
-    }
-
-    // Reset to page 1 when filtering
-    currentPage = 1;
-
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    const paginatedCats = cats.slice(startIndex, endIndex);
-
-    paginatedCats.forEach(cat => {
-        const div = document.createElement("div");
-        div.className = "card";
-        div.innerHTML = `
-            ${cat.IMG ? `<img src="${cat.IMG}" alt="${cat.name}" loading="lazy" />` : '<div class="no-image">No Image</div>'}
-            <h3>${escapeHTML(cat.name) || 'Unnamed Cat'}</h3>
-            <p>${escapeHTML(cat.description) || 'No description available'}</p>
-            <span class="tag-badge">${escapeHTML(cat.tag) || 'No tag'}</span>
-            <div class="actions">
-                <button onclick="editCat(${cat.id})" class="btn-edit">Edit</button>
-                <button onclick="deleteCat(${cat.id})" class="btn-delete">Delete</button>
-            </div>
-        `;
-        gallery.appendChild(div);
-    });
-
-    renderPagination(cats.length);
-}
-
-// ============ PAGINATION ============
-function renderPagination(totalItems) {
-    const paginationContainer = document.getElementById("pagination");
-    if (!paginationContainer) return;
-
-    paginationContainer.innerHTML = "";
-
-    const totalPages = Math.ceil(totalItems / itemsPerPage);
-
-    if (totalPages <= 1) return;
-
-    for (let i = 1; i <= totalPages; i++) {
-        const btn = document.createElement("button");
-        btn.innerText = i;
-        btn.className = i === currentPage ? "active" : "";
-        btn.onclick = () => {
-            currentPage = i;
-            // Get current filtered cats
-            const tagFilter = document.getElementById('tag-filter');
-            const selectedTag = tagFilter ? tagFilter.value : '';
-            const searchQuery = searchInput ? searchInput.value.toLowerCase() : '';
-
-            let filteredCats = catsData;
-
-            if (selectedTag && selectedTag !== "") {
-                filteredCats = filteredCats.filter(cat => {
-                    const catTag = cat.tag ? cat.tag.trim().toLowerCase() : '';
-                    return catTag === selectedTag.toLowerCase();
-                });
-            }
-
-            if (searchQuery) {
-                filteredCats = filteredCats.filter(cat =>
-                    (cat.name && cat.name.toLowerCase().includes(searchQuery)) ||
-                    (cat.tag && cat.tag.toLowerCase().includes(searchQuery)) ||
-                    (cat.description && cat.description.toLowerCase().includes(searchQuery))
-                );
-            }
-
-            renderGalleryForPage(filteredCats);
-        };
-        paginationContainer.appendChild(btn);
-    }
-}
-
-function renderGalleryForPage(cats) {
-    if (!gallery) return;
-
-    gallery.innerHTML = "";
-
-    if (!cats || cats.length === 0) {
-        gallery.innerHTML = '<div class="no-results">No cats found</div>';
-        return;
-    }
-
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    const paginatedCats = cats.slice(startIndex, endIndex);
-
-    paginatedCats.forEach(cat => {
-        const div = document.createElement("div");
-        div.className = "card";
-        div.innerHTML = `
-            ${cat.IMG ? `<img src="${cat.IMG}" alt="${cat.name}" loading="lazy" />` : '<div class="no-image">No Image</div>'}
-            <h3>${escapeHTML(cat.name) || 'Unnamed Cat'}</h3>
-            <p>${escapeHTML(cat.description) || 'No description available'}</p>
-            <span class="tag-badge">${escapeHTML(cat.tag) || 'No tag'}</span>
-            <div class="actions">
-                <button onclick="editCat(${cat.id})" class="btn-edit">Edit</button>
-                <button onclick="deleteCat(${cat.id})" class="btn-delete">Delete</button>
-            </div>
-        `;
-        gallery.appendChild(div);
-    });
-}
-
-// ============ MODAL FUNCTIONS ============
-function openAddModal() {
-    nameInput.value = "";
-    tagInput.value = "";
-    descriptionInput.value = "";
-    imgInput.value = "";
-    editingId = null;
-
-    document.getElementById("addBtn").style.display = "inline-block";
-    document.getElementById("editBtn").style.display = "none";
-
-    modal.style.display = "flex";
-}
-
-function closeModal() {
-    modal.style.display = "none";
-    editingId = null;
-}
-
-function addCat() {
-    const cat = {
-        name: nameInput.value,
-        tag: tagInput.value,
-        description: descriptionInput.value,
-        IMG: imgInput.value
-    };
-
-    if (!cat.name || !cat.name.trim()) {
-        showNotification('⚠️ Please enter a cat name', 'warning');
-        return;
-    }
-
-    showNotification('Adding cat...', 'info');
-
-    fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(cat)
-    })
-        .then(res => {
-            console.log("Add cat response:", res.status);
-            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-            return res.json();
-        })
-        .then(data => {
-            console.log("✅ Cat added:", data);
-            showNotification('✅ Cat added successfully!', 'success');
-            closeModal();
-            loadCats();
-            fetchTags(); // Refresh tags after adding new cat
-        })
-        .catch(err => {
-            console.error('❌ Error adding cat:', err);
-            showNotification('❌ Failed to add cat. Please try again.', 'error');
-        });
-}
-
-function editCat(id) {
-    const cat = catsData.find(c => c.id === id);
-    if (!cat) {
-        showNotification('Cat not found', 'error');
-        return;
-    }
-
-    editingId = id;
-
-    nameInput.value = cat.name;
-    tagInput.value = cat.tag;
-    descriptionInput.value = cat.description;
-    imgInput.value = cat.IMG || "";
-
-    document.getElementById("addBtn").style.display = "none";
-    document.getElementById("editBtn").style.display = "inline-block";
-
-    modal.style.display = "flex";
-}
-
-function updateCat() {
-    if (editingId === null) return;
-
-    const cat = {
-        name: nameInput.value,
-        tag: tagInput.value,
-        description: descriptionInput.value,
-        IMG: imgInput.value
-    };
-
-    if (!cat.name || !cat.name.trim()) {
-        showNotification('⚠️ Please enter a cat name', 'warning');
-        return;
-    }
-
-    showNotification('Updating cat...', 'info');
-
-    fetch(`${API_URL}/${editingId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(cat)
-    })
-        .then(res => {
-            console.log("Update cat response:", res.status);
-            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-            return res.json();
-        })
-        .then(data => {
-            console.log("✅ Cat updated:", data);
-            showNotification('✅ Cat updated successfully!', 'success');
-            closeModal();
-            loadCats();
-            fetchTags(); // Refresh tags after updating
-        })
-        .catch(err => {
-            console.error('❌ Error updating cat:', err);
-            showNotification('❌ Failed to update cat. Please try again.', 'error');
-        });
-}
-
-function deleteCat(id) {
-    if (!confirm('Are you sure you want to delete this cat?')) return;
-
-    showNotification('Deleting cat...', 'info');
-
-    fetch(`${API_URL}/${id}`, {
-        method: "DELETE"
-    })
-        .then(res => {
-            console.log("Delete cat response:", res.status);
-            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-            return res.json();
-        })
-        .then(data => {
-            console.log("✅ Cat deleted:", data);
-            showNotification('✅ Cat deleted successfully!', 'success');
-            loadCats();
-            fetchTags(); // Refresh tags after deletion
-        })
-        .catch(err => {
-            console.error('❌ Error deleting cat:', err);
-            showNotification('❌ Failed to delete cat. Please try again.', 'error');
-        });
-}
-
-// ============ EVENT LISTENERS SETUP ============
-function setupEventListeners() {
-    // Add Cat Button
-    const addCatBtn = document.getElementById("addCatBtn");
-    if (addCatBtn) {
-        addCatBtn.addEventListener("click", openAddModal);
-    }
-
-    // Tag Filter Change
-    if (tagFilter) {
-        tagFilter.addEventListener('change', function () {
-            const selectedTag = this.value;
-            console.log("🎯 Tag selected:", selectedTag);
-            filterCatsByTag(selectedTag);
-        });
-    }
-
-    // Search Input
-    setupSearch();
-
-    // Close modal when clicking outside
-    window.addEventListener('click', function (event) {
+document.addEventListener('DOMContentLoaded', async function () {
+    console.log("📄 جاري تحميل الصفحة...");
+    
+    // إعداد المستمعين للأحداث
+    document.getElementById('authForm')?.addEventListener('submit', submitAuth);
+    document.getElementById('loginBtn')?.addEventListener('click', () => openAuthModal('login'));
+    document.getElementById('signupBtn')?.addEventListener('click', () => openAuthModal('register'));
+    document.getElementById('dashboardBtn')?.addEventListener('click', navigateToDashboard);
+    
+    // إغلاق النافذة عند الضغط خارجها
+    window.addEventListener('click', function(event) {
+        const modal = document.getElementById('authModal');
         if (event.target === modal) {
-            closeModal();
+            closeAuthModal();
         }
     });
-
-    // Close modal with Escape key
-    document.addEventListener('keydown', function (event) {
+    
+    // إغلاق النافذة بالزر Escape
+    document.addEventListener('keydown', function(event) {
         if (event.key === 'Escape') {
-            closeModal();
+            closeAuthModal();
         }
     });
-}
-
-// ============ UTILITY FUNCTIONS ============
-function showError(message) {
-    if (gallery) {
-        gallery.innerHTML = `<div class="error">${message}</div>`;
-    }
-    console.error("❌ Error:", message);
-}
-
-function showLoading() {
-    if (gallery) {
-        gallery.innerHTML = '<div class="loading">Loading cats...</div>';
-    }
-}
-
-function hideLoading() {
-    // Loading state is removed when renderGallery is called
-}
-
-function showNotification(message, type = 'info') {
-    // Remove existing notification
-    const existing = document.querySelector('.notification');
-    if (existing) existing.remove();
-
-    const notification = document.createElement('div');
-    notification.className = `notification notification-${type}`;
-    notification.innerHTML = `
-        <span>${message}</span>
-        <button onclick="this.parentElement.remove()">×</button>
-    `;
-
-    // Add CSS if not already present
-    if (!document.querySelector('#notification-styles')) {
-        const style = document.createElement('style');
-        style.id = 'notification-styles';
-        style.textContent = `
-            .notification {
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                padding: 15px 20px;
-                border-radius: 8px;
-                color: white;
-                z-index: 1000;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                min-width: 300px;
-                max-width: 500px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                animation: slideIn 0.3s ease;
-            }
-            .notification-info { background: #3498db; }
-            .notification-success { background: #2ecc71; }
-            .notification-warning { background: #f39c12; }
-            .notification-error { background: #e74c3c; }
-            .notification button {
-                background: none;
-                border: none;
-                color: white;
-                font-size: 20px;
-                cursor: pointer;
-                margin-left: 15px;
-            }
-            @keyframes slideIn {
-                from { transform: translateX(100%); opacity: 0; }
-                to { transform: translateX(0); opacity: 1; }
-            }
-        `;
-        document.head.appendChild(style);
-    }
-
-    document.body.appendChild(notification);
-
-    // Auto-remove after 5 seconds
-    setTimeout(() => {
-        if (notification.parentElement) {
-            notification.remove();
-        }
-    }, 5000);
-}
-
-function escapeHTML(text) {
-    if (!text) return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-// Debug function
-function debugApp() {
-    console.log("=== 🐛 DEBUG INFO ===");
-    console.log("API URL:", API_URL);
-    console.log("Cats data:", catsData);
-    console.log("Cats count:", catsData.length);
-    console.log("Current tag filter:", currentTagFilter);
-    console.log("Current page:", currentPage);
-
-    // Test API
-    fetch(API_URL)
-        .then(res => console.log("Current API status:", res.status))
-        .catch(err => console.log("API error:", err.message));
-}
-
-//auth    
-// Navigation between sections
-document.querySelectorAll('.cyber-nav-link').forEach(link => {
-    link.addEventListener('click', function (e) {
-        e.preventDefault();
-        const targetId = this.getAttribute('href').substring(1);
-
-        // Update active nav link
-        document.querySelectorAll('.cyber-nav-link').forEach(l => l.classList.remove('active'));
-        this.classList.add('active');
-
-        // Show target section
-        document.querySelectorAll('.cyber-section').forEach(section => {
-            section.classList.remove('active');
-        });
-        document.getElementById(targetId).classList.add('active');
-    });
+    
+    // التحقق من حالة المصادقة عند التحميل
+    await checkAuth();
+    
+    // تحميل القطط
+    loadCats();
 });
 
-
-// Contact form submission
-document.querySelector('.contact-form').addEventListener('submit', function (e) {
-    e.preventDefault();
-    alert('Message sent securely!');
-    this.reset();
-});
-
-
-
-
-
-
-//login page
-
-
-
-
-
-
-
-
-
-
-
-
-// Close all modals
-function closeAllModals() {
-    closeModal();
-
-}
-
-
-// Make debug function available globally
-window.debugApp = debugApp;
-window.clearFilter = clearFilter;
-window.editCat = editCat;
-window.deleteCat = deleteCat;
-window.openAddModal = openAddModal;
-window.closeModal = closeModal;
-window.addCat = addCat;
-window.updateCat = updateCat;
-window.filterCatsByTag = filterCatsByTag;
-
-// Initialize debug
-console.log("🐱 Cat Gallery Script Loaded");
-console.log("🌐 API Endpoint:", API_URL);
+// جعل الدوال متاحة عالمياً
+window.openAuthModal = openAuthModal;
+window.closeAuthModal = closeAuthModal;
+window.submitAuth = submitAuth;
+window.checkAuth = checkAuth;
+window.logout = logout;
+window.navigateToDashboard = navigateToDashboard;

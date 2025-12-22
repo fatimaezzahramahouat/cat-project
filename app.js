@@ -1,3 +1,5 @@
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 export default {
     async fetch(request, env) {
         const url = new URL(request.url);
@@ -16,6 +18,25 @@ export default {
             return new Response(null, { headers: corsHeaders });
         }
 
+
+        if (url.pathname === "/register" && req.method === "POST") {
+      return register(req, env);
+    }
+
+    if (url.pathname === "/login" && req.method === "POST") {
+      return login(req, env);
+    }
+
+    if (url.pathname === "/dashboard" && req.method === "GET") {
+      return dashboard(req, env);
+    }
+
+    if (url.pathname === "/logout") {
+      return logout();
+    }
+
+    return new Response("Not Found", { status: 404 });
+  
         // ========== API ROUTES ==========
 
         // GET /cats - Get all cats
@@ -159,6 +180,68 @@ export default {
         }
 
         ///AUTH
+async function register(req, env) {
+  const { email, password } = await req.json();
+  const hashed = await bcrypt.hash(password, 10);
+
+  await env.DB.prepare(
+    "INSERT INTO users (email, password) VALUES (?, ?)"
+  ).bind(email, hashed).run();
+
+  return new Response("User created");
+}
+async function login(req, env) {
+  const { email, password } = await req.json();
+
+  const user = await env.DB.prepare(
+    "SELECT * FROM users WHERE email = ?"
+  ).bind(email).first();
+
+  if (!user) return new Response("Invalid email", { status: 401 });
+
+  const valid = await bcrypt.compare(password, user.password);
+  if (!valid) return new Response("Wrong password", { status: 401 });
+
+  const token = jwt.sign(
+    { id: user.id },
+    env.JWT_SECRET,
+    { expiresIn: "1d" }
+  );
+
+  return new Response("Login success", {
+    headers: {
+      "Set-Cookie": `token=${token}; HttpOnly; Secure; SameSite=Strict; Path=/`
+    }
+  });
+}
+function verifyToken(req, env) {
+  const cookie = req.headers.get("Cookie");
+  if (!cookie) return null;
+
+  const token = cookie.split("token=")[1];
+  if (!token) return null;
+
+  try {
+    return jwt.verify(token, env.JWT_SECRET);
+  } catch {
+    return null;
+  }
+}
+async function dashboard(req, env) {
+  const user = verifyToken(req, env);
+  if (!user) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
+  return new Response(`Welcome user ${user.id}`);
+}
+function logout() {
+  return new Response("Logged out", {
+    headers: {
+      "Set-Cookie": "token=; HttpOnly; Secure; Max-Age=0; Path=/"
+    }
+  });
+}
 
 
 

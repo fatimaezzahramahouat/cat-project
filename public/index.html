@@ -29,7 +29,18 @@
                 <li><a href="#home" class="cyber-nav-link active"><i class="fas fa-home"></i> HOME</a></li>
                 <li><a href="#about" class="cyber-nav-link"><i class="fas fa-info-circle"></i> ABOUT</a></li>
                 <li><a href="#contact" class="cyber-nav-link"><i class="fas fa-envelope"></i> CONTACT</a></li>
+                <li>
+  <a href="#" class="cyber-nav-link" onclick="openAuthModal('login')">
+    <i class="fas fa-sign-in-alt"></i> LOGIN
+  </a>
+</li>
+<li>
+  <a href="#" class="cyber-nav-link" onclick="openAuthModal('register')">
+    <i class="fas fa-user-plus"></i> REGISTER
+  </a>
+</li>
             </ul>
+
 
 
         </div>
@@ -217,7 +228,6 @@
 
 
     </div>
-    </div>
 
     <!-- Cat Modal (Same as before) -->
     <div class="modal" id="catModal">
@@ -242,6 +252,23 @@
     </div>
 
     </div>
+<div class="modal" id="authModal">
+  <div class="modal-content cyber-modal-content">
+    <h2 id="authTitle">LOGIN</h2>
+
+    <input type="email" id="authEmail" placeholder="Email" />
+    <input type="password" id="authPassword" placeholder="Password" />
+
+    <div class="modal-actions">
+      <button class="cyber-btn success" onclick="submitAuth()">
+        <i class="fas fa-check"></i> SUBMIT
+      </button>
+      <button class="cyber-btn cancel" onclick="closeAuthModal()">
+        <i class="fas fa-times"></i> CANCEL
+      </button>
+    </div>
+  </div>
+</div>
 
     <!-- Footer -->
     <footer class="cyber-footer">

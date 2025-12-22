@@ -657,10 +657,67 @@ document.querySelector('.contact-form').addEventListener('submit', function (e) 
 
 
 //login page
+let authMode = "login";
+
+// OPEN MODAL
+function openAuthModal(mode) {
+  authMode = mode;
+  document.getElementById("authTitle").innerText =
+    mode === "login" ? "LOGIN" : "REGISTER";
+
+  document.getElementById("authModal").style.display = "block";
+}
+
+// CLOSE MODAL
+function closeAuthModal() {
+  document.getElementById("authModal").style.display = "none";
+}
+
+// SUBMIT LOGIN / REGISTER
+async function submitAuth() {
+  const email = document.getElementById("authEmail").value;
+  const password = document.getElementById("authPassword").value;
+
+  const endpoint = authMode === "login" ? "/login" : "/register";
+
+  const res = await fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password })
+  });
+
+  if (!res.ok) {
+    alert("Authentication failed");
+    return;
+  }
+
+  closeAuthModal();
+  checkAuth();
+}
+async function checkAuth() {
+  const res = await fetch("/dashboard");
+
+  const addBtn = document.getElementById("addCatBtn");
+
+  if (res.ok) {
+    addBtn.style.display = "inline-block";
+  } else {
+    addBtn.style.display = "none";
+  }
+}
+
+checkAuth();
 
 
 
 
+fetch("/login", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ email, password })
+}).then(res => {
+  if (res.ok) window.location.href = "/dashboard.html";
+});
 
 
 

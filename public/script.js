@@ -53,6 +53,8 @@ function testAPI() {
 }
 
 // ============ LOAD CATS ============
+
+// ============ LOAD CATS ============
 function loadCats() {
     console.log("🐱 Loading cats from API:", API_URL);
     showLoading();
@@ -60,20 +62,88 @@ function loadCats() {
     fetch(API_URL)
         .then(res => {
             console.log("Load cats response:", res.status, res.statusText);
-            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+            
+            // Check if response is JSON
+            const contentType = res.headers.get('content-type');
+            console.log("Content-Type:", contentType);
+            
+            if (!res.ok) {
+                // Try to get error message
+                return res.text().then(text => {
+                    console.error("Error response text:", text);
+                    throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+                });
+            }
+            
             return res.json();
         })
         .then(data => {
+            console.log("📊 Data received:", data);
+            
             catsData = Array.isArray(data) ? data : [];
             console.log(`✅ Loaded ${catsData.length} cats`);
-            hideLoading();
-            renderGallery(catsData);
+            
+            if (catsData.length === 0) {
+                showNoCatsMessage();
+            } else {
+                hideLoading();
+                renderGallery(catsData);
+            }
         })
         .catch(err => {
             console.error('❌ Error loading cats:', err);
             hideLoading();
-            showError('Failed to load cats. Please check if the Worker is running.');
+            showNoCatsMessage();
+            showError(`Failed to load cats: ${err.message}`);
         });
+}
+
+function showNoCatsMessage() {
+    if (gallery) {
+        gallery.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <i class="fas fa-cat"></i>
+                </div>
+                <h3>No Cats Found</h3>
+                <p>The feline database is currently empty.</p>
+                <p>Would you like to add some sample cats?</p>
+                <div class="empty-actions">
+                    <button onclick="initializeDatabase()" class="cyber-btn primary">
+                        <i class="fas fa-database"></i> Add Sample Cats
+                    </button>
+                    <button onclick="openAddModal()" class="cyber-btn secondary">
+                        <i class="fas fa-plus"></i> Add Your Own Cat
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+    updateCatCount(0);
+}
+
+async function initializeDatabase() {
+    showNotification('Adding sample cats to database...', 'info');
+    
+    try {
+        const response = await fetch('/api/init-db', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification(`✅ ${data.message}`, 'success');
+            // Reload cats after initialization
+            setTimeout(() => loadCats(), 1000);
+        } else {
+            showNotification(`❌ ${data.error || 'Failed to initialize database'}`, 'error');
+        }
+    } catch (error) {
+        console.error('Initialize error:', error);
+        showNotification('❌ Failed to initialize database', 'error');
+    }
 }
 
 // ============ FETCH TAGS ============

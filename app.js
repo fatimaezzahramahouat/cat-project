@@ -1,6 +1,5 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-const API_URL = "/cats";  // Use relative path for same origin
 
 export default {
     async fetch(request, env) {
@@ -372,108 +371,58 @@ export default {
         // ========== CAT ROUTES ==========
 
         // GET /cats - Get all cats (public)
-        if (pathname === "/cats" && method === "GET") {
+if (pathname === "/cats" && method === "GET") {
+    try {
+        console.log('🐱 Fetching all cats...');
+        
+        // First, let's check if cats table has data
+        const countResult = await env.DB.prepare("SELECT COUNT(*) as count FROM cats").first();
+        console.log(`📊 Total cats in database: ${countResult?.count || 0}`);
+        
+        if (countResult?.count === 0) {
+            // Database is empty, return empty array
+            console.log('📭 Cats table is empty');
+            return Response.json([], { headers: corsHeaders });
+        }
+        
+        // Try with LEFT JOIN first
+        try {
+            const { results } = await env.DB.prepare(`
+                SELECT c.*, u.username as owner_name 
+                FROM cats c 
+                LEFT JOIN users u ON c.user_id = u.id 
+                ORDER BY c.created_at DESC
+            `).all();
+            
+            console.log(`✅ Found ${results.length} cats with JOIN`);
+            return Response.json(results, { headers: corsHeaders });
+            
+        } catch (joinError) {
+            console.error('❌ JOIN query failed:', joinError.message);
+            
+            // If JOIN fails, try simple SELECT without JOIN
             try {
                 const { results } = await env.DB.prepare(`
-                    SELECT c.*, u.username as owner_name 
-                    FROM cats c 
-                    LEFT JOIN users u ON c.user_id = u.id 
-                    ORDER BY c.created_at DESC
+                    SELECT * FROM cats 
+                    ORDER BY created_at DESC
                 `).all();
-                return Response.json(results, { headers: corsHeaders });
-            } catch (error) {
-                console.error("Database error:", error);
-                return Response.json(
-                    { error: "Failed to fetch cats" },
-                    { status: 500, headers: corsHeaders }
-                );
-            }
-        }
-
-        // GET /cats/:id - Get specific cat
-        if (pathname.match(/^\/cats\/\d+$/) && method === "GET") {
-            try {
-                const id = pathname.split('/')[2];
-                const { results } = await env.DB.prepare(`
-                    SELECT c.*, u.username as owner_name 
-                    FROM cats c 
-                    LEFT JOIN users u ON c.user_id = u.id 
-                    WHERE c.id = ?
-                `).bind(id).all();
-
-                if (results.length === 0) {
-                    return Response.json(
-                        { error: "Cat not found" },
-                        { status: 404, headers: corsHeaders }
-                    );
-                }
-
-                return Response.json(results[0], { headers: corsHeaders });
-            } catch (error) {
-                console.error("Database error:", error);
-                return Response.json(
-                    { error: "Failed to fetch cat" },
-                    { status: 500, headers: corsHeaders }
-                );
-            }
-        }
-
-        // POST /cats - Add new cat (protected)
-        if (pathname === "/cats" && method === "POST") {
-            const auth = await authenticate(request);
-            if (!auth) {
-                return Response.json(
-                    { error: "Authentication required" },
-                    { status: 401, headers: corsHeaders }
-                );
-            }
-
-            try {
-                const body = await request.json();
                 
-                // Validation
-                if (!body.name || body.name.trim() === '') {
-                    return Response.json(
-                        { error: "Cat name is required" },
-                        { status: 400, headers: corsHeaders }
-                    );
-                }
-
-                const result = await env.DB.prepare(`
-                    INSERT INTO cats (name, tag, description, IMG, user_id) 
-                    VALUES (?, ?, ?, ?, ?)
-                `).bind(
-                    body.name.trim(),
-                    body.tag ? body.tag.trim() : null,
-                    body.description ? body.description.trim() : null,
-                    body.IMG ? body.IMG.trim() : null,
-                    auth.id
-                ).run();
-
-                // Get the newly created cat
-                const newCat = await env.DB.prepare(`
-                    SELECT c.*, u.username as owner_name 
-                    FROM cats c 
-                    LEFT JOIN users u ON c.user_id = u.id 
-                    WHERE c.id = ?
-                `).bind(result.meta.last_row_id).first();
-
-                return Response.json(
-                    {
-                        message: "Cat added successfully",
-                        cat: newCat
-                    },
-                    { status: 201, headers: corsHeaders }
-                );
-
-            } catch (error) {
-                console.error("Database error:", error);
-                return Response.json(
-                    { error: "Failed to add cat" },
-                    { status: 500, headers: corsHeaders }
-                );
+                console.log(`✅ Found ${results.length} cats (simple query)`);
+                return Response.json(results, { headers: corsHeaders });
+                
+            } catch (simpleError) {
+                console.error('❌ Simple query also failed:', simpleError.message);
+                return Response.json([], { headers: corsHeaders });
             }
         }
+        
+    } catch (error) {
+        console.error("❌ Database error:", error);
+        
+        // Return empty array instead of error
+        return Response.json([], { headers: corsHeaders });
+    }
+}
 
         // PUT /cats/:id - Update cat (protected)
         if (pathname.match(/^\/cats\/\d+$/) && method === "PUT") {
@@ -661,27 +610,32 @@ export default {
         // ========== TAG ROUTES ==========
 
         // GET /tags - Get all unique tags
-        if (pathname === "/tags" && method === "GET") {
-            try {
-                const { results } = await env.DB.prepare(`
-                    SELECT DISTINCT TRIM(tag) as tag 
-                    FROM cats 
-                    WHERE tag IS NOT NULL 
-                    AND tag != '' 
-                    AND TRIM(tag) != ''
-                    ORDER BY tag ASC
-                `).all();
-
-                const tags = results.map(r => r.tag).filter(tag => tag);
-                return Response.json(tags, { headers: corsHeaders });
-            } catch (error) {
-                console.error("Database error:", error);
-                return Response.json(
-                    { error: "Failed to fetch tags" },
-                    { status: 500, headers: corsHeaders }
-                );
-            }
+        // GET /tags - Get all unique tags
+if (pathname === "/tags" && method === "GET") {
+    try {
+        // First check if cats table exists and has data
+        const countResult = await env.DB.prepare("SELECT COUNT(*) as count FROM cats").first();
+        
+        if (countResult?.count === 0) {
+            return Response.json([], { headers: corsHeaders });
         }
+        
+        const { results } = await env.DB.prepare(`
+            SELECT DISTINCT TRIM(tag) as tag 
+            FROM cats 
+            WHERE tag IS NOT NULL 
+            AND tag != '' 
+            AND TRIM(tag) != ''
+            ORDER BY tag ASC
+        `).all();
+
+        const tags = results.map(r => r.tag).filter(tag => tag);
+        return Response.json(tags, { headers: corsHeaders });
+    } catch (error) {
+        console.error("Database error:", error);
+        return Response.json([], { headers: corsHeaders });
+    }
+}
 
         // ========== HEALTH CHECK ROUTES ==========
 

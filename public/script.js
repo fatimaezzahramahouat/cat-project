@@ -2,8 +2,7 @@
 // Use relative URL for your Cloudflare Worker
 const API_URL = "/cats";  // Changed from http://localhost:5000/cats
 const API_BASE = ""; // Same origin
-let currentUser = null;
-let editingCatId = null;
+
 // ============ DOM ELEMENTS ============
 const gallery = document.getElementById("catGallery");
 const modal = document.getElementById("catModal");
@@ -626,7 +625,7 @@ function debugApp() {
 }
 
 //auth    
-//  // Navigation between sections
+// Navigation between sections
 document.querySelectorAll('.cyber-nav-link').forEach(link => {
     link.addEventListener('click', function (e) {
         e.preventDefault();
@@ -644,25 +643,6 @@ document.querySelectorAll('.cyber-nav-link').forEach(link => {
     });
 });
 
-// Login/Signup buttons
-document.querySelector('.login-btn').addEventListener('click', function (e) {
-    e.preventDefault();
-    document.getElementById('login-modal').style.display = 'flex';
-});
-
-document.querySelector('.signup-btn').addEventListener('click', function (e) {
-    e.preventDefault();
-    document.getElementById('signup-modal').style.display = 'flex';
-});
-
-// Close modals
-function closeLoginModal() {
-    document.getElementById('login-modal').style.display = 'none';
-}
-
-function closeSignupModal() {
-    document.getElementById('signup-modal').style.display = 'none';
-}
 
 // Contact form submission
 document.querySelector('.contact-form').addEventListener('submit', function (e) {
@@ -671,156 +651,28 @@ document.querySelector('.contact-form').addEventListener('submit', function (e) 
     this.reset();
 });
 
-// Auth forms
-document.querySelectorAll('.auth-form').forEach(form => {
-    form.addEventListener('submit', function (e) {
-        e.preventDefault();
-        alert('Authentication successful!');
-        closeLoginModal();
-        closeSignupModal();
-    });
-});
 
-// Update cat count
-function updateCatCount(count) {
-    document.getElementById('catCount').textContent = count;
-}
 
-// Initialize with home section active
-document.addEventListener('DOMContentLoaded', function () {
-    document.getElementById('home').classList.add('active');
 
-    // Start typing animation
-    const title = document.querySelector('.terminal-header h1');
-    if (title) {
-        const text = title.textContent;
-        title.textContent = '';
-        let i = 0;
-        const typing = setInterval(() => {
-            if (i < text.length) {
-                title.textContent += text.charAt(i);
-                i++;
-            } else {
-                clearInterval(typing);
-            }
-        }, 50);
-    }
-});
+
 
 //login page
 
-// ============ SIGNUP FORM HANDLER ============
-async function handleSignup(e) {
-    e.preventDefault();
-    console.log("📝 Handling signup...");
 
-    const username = document.getElementById('signup-username').value;
-    const email = document.getElementById('signup-email').value;
-    const password = document.getElementById('signup-password').value;
-    const confirmPassword = document.getElementById('signup-confirm-password').value;
 
-    // Validation
-    if (!username || !email || !password || !confirmPassword) {
-        showNotification('All fields are required', 'error');
-        return;
-    }
 
-    if (password.length < 6) {
-        showNotification('Password must be at least 6 characters', 'error');
-        return;
-    }
 
-    if (password !== confirmPassword) {
-        showNotification('Passwords do not match', 'error');
-        return;
-    }
 
-    // Show loading state
-    const submitBtn = e.target.querySelector('button[type="submit"]');
-    const originalText = submitBtn.innerHTML;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Account...';
-    submitBtn.disabled = true;
 
-    try {
-        console.log("📤 Sending signup request...");
 
-        const response = await fetch('/auth/register', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                username: username.trim(),
-                email: email.trim(),
-                password: password
-            })
-        });
 
-        const data = await response.json();
-        console.log("📥 Signup response:", data);
 
-        if (response.ok) {
-            // Save user to localStorage
-            currentUser = data.user;
-            authToken = data.token;
-            localStorage.setItem('currentUser', JSON.stringify(currentUser));
-            localStorage.setItem('authToken', authToken);
 
-            showNotification('✅ Account created successfully!', 'success');
-            closeSignupModal();
-
-            // Update UI
-            updateAuthUI();
-
-            // Show dashboard
-            showDashboard();
-
-        } else {
-            showNotification(data.error || 'Signup failed', 'error');
-        }
-    } catch (error) {
-        console.error('❌ Signup error:', error);
-        showNotification('Error during signup. Please try again.', 'error');
-    } finally {
-        // Reset button state
-        submitBtn.innerHTML = originalText;
-        submitBtn.disabled = false;
-    }
-}
-// Signup form submission
-const signupForm = document.getElementById('signup-form');
-if (signupForm) {
-    signupForm.addEventListener('submit', handleSignup);
-}
-
-// Signup button click
-const signupBtn = document.querySelector('.signup-btn');
-if (signupBtn) {
-    signupBtn.addEventListener('click', function (e) {
-        e.preventDefault();
-        console.log("📝 Signup button clicked");
-        showSignupModal();
-    });
-}
-// Show signup modal
-function showSignupModal() {
-    console.log("🔄 Showing signup modal");
-    closeAllModals();
-    document.getElementById('signup-modal').style.display = 'flex';
-}
-
-// Close signup modal
-function closeSignupModal() {
-    document.getElementById('signup-modal').style.display = 'none';
-    const form = document.getElementById('signup-form');
-    if (form) form.reset();
-}
 
 // Close all modals
 function closeAllModals() {
     closeModal();
-    closeLoginModal();
-    closeSignupModal();
+
 }
 
 

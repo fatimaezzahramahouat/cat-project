@@ -658,7 +658,37 @@ document.querySelector('.contact-form').addEventListener('submit', function (e) 
 
 //login page
 
+document.querySelector('.login-btn').onclick = () => {
+    document.getElementById('login-modal').style.display = 'flex';
+};
 
+document.querySelector('.signup-btn').onclick = () => {
+    document.getElementById('signup-modal').style.display = 'flex';
+};
+
+function closeLoginModal() {
+    document.getElementById('login-modal').style.display = 'none';
+}
+
+function closeSignupModal() {
+    document.getElementById('signup-modal').style.display = 'none';
+}
+
+function initDashboard() {
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (!user) return;
+
+    document.getElementById('addCatBtn').style.display = 'inline-block';
+
+    // Hide login/signup
+    document.querySelector('.login-btn').style.display = 'none';
+    document.querySelector('.signup-btn').style.display = 'none';
+}
+document.addEventListener('DOMContentLoaded', initDashboard);
+function logout() {
+    localStorage.clear();
+    location.reload();
+}
 
 
 

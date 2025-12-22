@@ -1,11 +1,9 @@
 // ============ API CONFIGURATION ============
-// Base URL for API calls
-const API_BASE = ''; // Same origin since Cloudflare Worker handles routing
+// Use relative URL for your Cloudflare Worker
+const API_URL = "/cats";  // Changed from http://localhost:5000/cats
+const API_BASE = ""; // Same origin
 let currentUser = null;
 let editingCatId = null;
-let isAuthenticated = false;
-let authToken = null;
-
 // ============ DOM ELEMENTS ============
 const gallery = document.getElementById("catGallery");
 const modal = document.getElementById("catModal");
@@ -26,443 +24,17 @@ const tagFilter = document.getElementById("tag-filter");
 // ============ INITIALIZATION ============
 document.addEventListener('DOMContentLoaded', function () {
     console.log("📄 DOM loaded, initializing Cat Gallery...");
+    console.log("🌐 API URL:", API_URL);
 
-    // Check if user is logged in
-    checkAuthStatus();
+    // Test API connection immediately
+    testAPI();
 
-    // Load cats
     loadCats();
     fetchTags();
     setupEventListeners();
-
-    // Setup auth event listeners
-    setupAuthEventListeners();
 });
 
-// ============ AUTHENTICATION FUNCTIONS ============
-
-function checkAuthStatus() {
-    const savedUser = localStorage.getItem('currentUser');
-    const savedToken = localStorage.getItem('authToken');
-
-    if (savedUser && savedToken) {
-        currentUser = JSON.parse(savedUser);
-        authToken = savedToken;
-        isAuthenticated = true;
-        updateAuthUI();
-    }
-}
-
-function updateAuthUI() {
-    const authContainer = document.querySelector('.cyber-auth');
-    const dashboardLink = document.getElementById('dashboard-link');
-
-    if (!authContainer) return;
-
-    if (isAuthenticated && currentUser) {
-        // Show user info
-        authContainer.innerHTML = `
-            <div class="user-info">
-                <div class="user-avatar" onclick="showDashboard()" title="Dashboard">
-                    ${currentUser.avatar || '😺'}
-                </div>
-                <div class="user-details">
-                    <span class="user-name">${currentUser.username}</span>
-                    <span class="user-role">${currentUser.role.toUpperCase()}</span>
-                </div>
-                <button class="cyber-btn logout-btn" onclick="handleLogout()">
-                    <i class="fas fa-sign-out-alt"></i>
-                </button>
-            </div>
-        `;
-
-        // Show dashboard link
-        if (dashboardLink) {
-            dashboardLink.style.display = 'block';
-            dashboardLink.onclick = (e) => {
-                e.preventDefault();
-                showDashboard();
-            };
-        }
-
-    } else {
-        // Show login/signup buttons
-        authContainer.innerHTML = `
-            <a href="#login" class="cyber-btn login-btn" onclick="showLoginModal()">
-                <i class="fas fa-sign-in-alt"></i> LOGIN
-            </a>
-            <a href="#signup" class="cyber-btn signup-btn" onclick="showSignupModal()">
-                <i class="fas fa-user-plus"></i> SIGN UP
-            </a>
-        `;
-
-        // Hide dashboard link
-        if (dashboardLink) dashboardLink.style.display = 'none';
-    }
-}
-
-// ============ MODAL FUNCTIONS ============
-function showLoginModal() {
-    closeAllModals();
-    document.getElementById('login-modal').style.display = 'flex';
-    document.getElementById('login-email')?.focus();
-}
-
-function showSignupModal() {
-    closeAllModals();
-    document.getElementById('signup-modal').style.display = 'flex';
-    document.getElementById('signup-username')?.focus();
-}
-
-function closeAllModals() {
-    const modals = document.querySelectorAll('.cyber-modal');
-    modals.forEach(modal => {
-        modal.style.display = 'none';
-    });
-}
-
-// ============ API CALLS ============
-
-async function handleSignup(e) {
-    e.preventDefault();
-    console.log("📝 Handling signup...");
-
-    const username = document.getElementById('signup-username')?.value;
-    const email = document.getElementById('signup-email')?.value;
-    const password = document.getElementById('signup-password')?.value;
-    const confirmPassword = document.getElementById('signup-confirm')?.value;
-
-    // Validation
-    if (!username || !email || !password || !confirmPassword) {
-        showNotification('All fields are required', 'error');
-        return;
-    }
-
-    if (password.length < 6) {
-        showNotification('Password must be at least 6 characters', 'error');
-        return;
-    }
-
-    if (password !== confirmPassword) {
-        showNotification('Passwords do not match', 'error');
-        return;
-    }
-
-    // Show loading state
-    const submitBtn = e.target.querySelector('button[type="submit"]');
-    const originalText = submitBtn.innerHTML;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Account...';
-    submitBtn.disabled = true;
-
-    try {
-        console.log("📤 Sending signup request...");
-
-        const response = await fetch('/auth/register', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                username: username.trim(),
-                email: email.trim(),
-                password: password
-            })
-        });
-
-        const data = await response.json();
-        console.log("📥 Signup response:", data);
-
-        if (response.ok) {
-            // Save user to localStorage
-            currentUser = data.user;
-            authToken = data.token;
-            isAuthenticated = true;
-
-            localStorage.setItem('currentUser', JSON.stringify(currentUser));
-            localStorage.setItem('authToken', authToken);
-
-            showNotification('✅ Account created successfully!', 'success');
-            closeAllModals();
-
-            // Update UI
-            updateAuthUI();
-
-            // Show dashboard
-            showDashboard();
-
-        } else {
-            showNotification(data.error || 'Signup failed', 'error');
-        }
-    } catch (error) {
-        console.error('❌ Signup error:', error);
-        showNotification('Error during signup. Please try again.', 'error');
-    } finally {
-        // Reset button state
-        submitBtn.innerHTML = originalText;
-        submitBtn.disabled = false;
-    }
-}
-
-async function handleLogin(e) {
-    e.preventDefault();
-
-    const email = document.getElementById('login-email')?.value;
-    const password = document.getElementById('login-password')?.value;
-
-    if (!email || !password) {
-        showNotification('Please fill in all fields', 'error');
-        return;
-    }
-
-    // Show loading state
-    const submitBtn = e.target.querySelector('button[type="submit"]');
-    const originalText = submitBtn.innerHTML;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
-    submitBtn.disabled = true;
-
-    try {
-        const response = await fetch('/auth/login', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                email: email.trim(),
-                password: password
-            })
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            // Save user to localStorage
-            currentUser = data.user;
-            authToken = data.token;
-            isAuthenticated = true;
-
-            localStorage.setItem('currentUser', JSON.stringify(currentUser));
-            localStorage.setItem('authToken', authToken);
-
-            showNotification('✅ Login successful!', 'success');
-            closeAllModals();
-
-            // Update UI
-            updateAuthUI();
-
-            // Show dashboard
-            showDashboard();
-
-        } else {
-            showNotification(data.error || 'Login failed', 'error');
-        }
-    } catch (error) {
-        console.error('❌ Login error:', error);
-        showNotification('Error during login. Please try again.', 'error');
-    } finally {
-        // Reset button state
-        submitBtn.innerHTML = originalText;
-        submitBtn.disabled = false;
-    }
-}
-
-function handleLogout() {
-    currentUser = null;
-    authToken = null;
-    isAuthenticated = false;
-
-    localStorage.removeItem('currentUser');
-    localStorage.removeItem('authToken');
-
-    updateAuthUI();
-    showHome();
-    showNotification('✅ Logged out successfully', 'success');
-}
-
-// ============ DASHBOARD FUNCTIONS ============
-
-async function showDashboard() {
-    if (!isAuthenticated) {
-        showLoginModal();
-        return;
-    }
-
-    try {
-        const response = await fetch('/users/me', {
-            headers: {
-                'Authorization': `Bearer ${authToken}`,
-                'Content-Type': 'application/json'
-            }
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            displayUserDashboard(data);
-        } else {
-            showNotification('Failed to load dashboard', 'error');
-        }
-    } catch (error) {
-        console.error('Dashboard error:', error);
-        showNotification('Error loading dashboard', 'error');
-    }
-}
-
-function displayUserDashboard(data) {
-    const dashboardSection = document.getElementById('dashboard');
-    const dashboardContent = document.getElementById('dashboard-content');
-
-    if (!dashboardSection || !dashboardContent) return;
-
-    // Hide all sections
-    document.querySelectorAll('.cyber-section').forEach(section => {
-        section.classList.remove('active');
-    });
-
-    // Update dashboard content based on user role
-    if (currentUser.role === 'admin') {
-        dashboardContent.innerHTML = createAdminDashboardHTML(data);
-    } else {
-        dashboardContent.innerHTML = createUserDashboardHTML(data);
-    }
-
-    // Show dashboard section
-    dashboardSection.classList.add('active');
-
-    // Update navigation
-    updateActiveNav('dashboard');
-}
-
-function createUserDashboardHTML(data) {
-    return `
-        <div class="dashboard-grid">
-            <div class="dashboard-card">
-                <div class="card-header">
-                    <i class="fas fa-user-circle"></i>
-                    <h3>MY PROFILE</h3>
-                </div>
-                <div class="card-content">
-                    <div class="profile-info">
-                        <div class="info-row">
-                            <span class="info-label">USERNAME:</span>
-                            <span class="info-value">${data.user.username}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">EMAIL:</span>
-                            <span class="info-value">${data.user.email}</span>
-                        </div>
-                        <div class="info-row">
-                            <span class="info-label">JOINED:</span>
-                            <span class="info-value">${new Date(data.user.created_at).toLocaleDateString()}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="dashboard-card">
-                <div class="card-header">
-                    <i class="fas fa-cat"></i>
-                    <h3>MY STATS</h3>
-                </div>
-                <div class="card-content">
-                    <div class="stats-grid">
-                        <div class="stat-item">
-                            <i class="fas fa-images"></i>
-                            <span class="stat-value">${data.stats.totalCats}</span>
-                            <span class="stat-label">CATS POSTED</span>
-                        </div>
-                        <div class="stat-item">
-                            <i class="fas fa-heart"></i>
-                            <span class="stat-value">${data.stats.totalLikes}</span>
-                            <span class="stat-label">TOTAL LIKES</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-}
-
-function createAdminDashboardHTML(data) {
-    return `
-        <div class="admin-grid">
-            <div class="admin-stats-grid">
-                <div class="admin-stat-card">
-                    <i class="fas fa-users"></i>
-                    <div class="stat-info">
-                        <h3>${data.stats?.totalUsers || 0}</h3>
-                        <p>TOTAL USERS</p>
-                    </div>
-                </div>
-                <div class="admin-stat-card">
-                    <i class="fas fa-cat"></i>
-                    <div class="stat-info">
-                        <h3>${data.stats?.totalCats || 0}</h3>
-                        <p>TOTAL CATS</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-}
-
-function updateActiveNav(sectionId) {
-    document.querySelectorAll('.cyber-nav-link').forEach(link => {
-        link.classList.remove('active');
-    });
-
-    const activeLink = document.querySelector(`.cyber-nav-link[href="#${sectionId}"]`);
-    if (activeLink) {
-        activeLink.classList.add('active');
-    }
-}
-
-function showHome() {
-    document.querySelectorAll('.cyber-section').forEach(section => {
-        section.classList.remove('active');
-    });
-
-    const homeSection = document.getElementById('home');
-    if (homeSection) {
-        homeSection.classList.add('active');
-        updateActiveNav('home');
-    }
-}
-
-// ============ SETUP EVENT LISTENERS ============
-
-function setupAuthEventListeners() {
-    // Signup form
-    const signupForm = document.getElementById('signup-form');
-    if (signupForm) {
-        signupForm.addEventListener('submit', handleSignup);
-    }
-
-    // Login form
-    const loginForm = document.getElementById('login-form');
-    if (loginForm) {
-        loginForm.addEventListener('submit', handleLogin);
-    }
-
-    // Login/Signup buttons
-    document.addEventListener('click', function (e) {
-        if (e.target.closest('.login-btn')) {
-            e.preventDefault();
-            showLoginModal();
-        }
-
-        if (e.target.closest('.signup-btn')) {
-            e.preventDefault();
-            showSignupModal();
-        }
-    });
-
-    // Modal close buttons
-    document.querySelectorAll('.modal-close').forEach(btn => {
-        btn.addEventListener('click', closeAllModals);
-    });
-}
-
-// ============ EXISTING CAT GALLERY FUNCTIONS (KEEP THESE) ============
-
+// ============ TEST API CONNECTION ============
 function testAPI() {
     console.log("🔌 Testing API connection...");
     fetch('/cats')
@@ -481,11 +53,12 @@ function testAPI() {
         });
 }
 
+// ============ LOAD CATS ============
 function loadCats() {
-    console.log("🐱 Loading cats from API...");
+    console.log("🐱 Loading cats from API:", API_URL);
     showLoading();
 
-    fetch('/cats')
+    fetch(API_URL)
         .then(res => {
             console.log("Load cats response:", res.status, res.statusText);
             if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
@@ -504,6 +77,7 @@ function loadCats() {
         });
 }
 
+// ============ FETCH TAGS ============
 function fetchTags() {
     console.log("🔄 Fetching tags from /tags...");
 
@@ -523,10 +97,448 @@ function fetchTags() {
         });
 }
 
-// ... Keep all your existing cat gallery functions ...
-// (addCat, editCat, deleteCat, renderGallery, etc.)
+function populateTagFilter(tags) {
+    const tagFilter = document.getElementById('tag-filter');
+    if (!tagFilter) {
+        console.error("❌ Tag filter element not found!");
+        return;
+    }
+
+    // Save current selection
+    const currentSelection = tagFilter.value;
+
+    // Clear and add default option
+    tagFilter.innerHTML = '<option value="">All tags</option>';
+
+    if (Array.isArray(tags) && tags.length > 0) {
+        // Filter and sort tags
+        const validTags = tags
+            .filter(tag => tag && typeof tag === 'string' && tag.trim().length > 0)
+            .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+
+        console.log(`✅ Adding ${validTags.length} tags to dropdown`);
+
+        validTags.forEach(tag => {
+            const option = document.createElement('option');
+            option.value = tag.trim();
+            option.textContent = tag.trim().charAt(0).toUpperCase() + tag.trim().slice(1);
+            tagFilter.appendChild(option);
+        });
+
+        // Restore previous selection
+        if (currentSelection && validTags.includes(currentSelection)) {
+            tagFilter.value = currentSelection;
+        }
+    } else {
+        console.warn("⚠️ No tags available");
+        const noTagsOption = document.createElement('option');
+        noTagsOption.value = "";
+        noTagsOption.textContent = "No tags available";
+        noTagsOption.disabled = true;
+        tagFilter.appendChild(noTagsOption);
+    }
+}
+
+function showErrorInTagFilter() {
+    const tagFilter = document.getElementById('tag-filter');
+    if (tagFilter) {
+        tagFilter.innerHTML = '';
+        const errorOption = document.createElement('option');
+        errorOption.value = "";
+        errorOption.textContent = "Error loading tags";
+        errorOption.disabled = true;
+        tagFilter.appendChild(errorOption);
+    }
+}
+
+// ============ FILTER BY TAG ============
+function filterCatsByTag(tag) {
+    console.log(`🔍 Filtering by tag: "${tag}"`);
+    currentTagFilter = tag;
+
+    let filteredCats;
+
+    if (!tag || tag === "") {
+        filteredCats = catsData;
+        console.log("🔄 Showing all cats");
+    } else {
+        filteredCats = catsData.filter(cat => {
+            const catTag = cat.tag ? cat.tag.trim().toLowerCase() : '';
+            return catTag === tag.toLowerCase();
+        });
+        console.log(`✅ Found ${filteredCats.length} cats with tag: "${tag}"`);
+    }
+
+    renderGallery(filteredCats);
+    updateFilterIndicator(tag);
+}
+
+function updateFilterIndicator(tag) {
+    const indicator = document.getElementById('filterIndicator');
+    if (!indicator) return;
+
+    if (tag && tag !== "") {
+        indicator.innerHTML = `
+            <span>Filtering by: <strong>${tag}</strong></span>
+            <button onclick="clearFilter()" class="clear-btn">Clear Filter</button>
+        `;
+        indicator.style.display = 'flex';
+    } else {
+        indicator.style.display = 'none';
+    }
+}
+
+function clearFilter() {
+    const tagFilter = document.getElementById('tag-filter');
+    if (tagFilter) {
+        tagFilter.value = '';
+        filterCatsByTag('');
+    }
+}
+
+// ============ SEARCH FUNCTIONALITY ============
+function setupSearch() {
+    if (!searchInput) return;
+
+    searchInput.addEventListener("input", () => {
+        const query = searchInput.value.toLowerCase();
+        const tagFilter = document.getElementById('tag-filter');
+        const selectedTag = tagFilter ? tagFilter.value : '';
+
+        let filteredCats = catsData;
+
+        // Apply tag filter first
+        if (selectedTag && selectedTag !== "") {
+            filteredCats = filteredCats.filter(cat => {
+                const catTag = cat.tag ? cat.tag.trim().toLowerCase() : '';
+                return catTag === selectedTag.toLowerCase();
+            });
+        }
+
+        // Apply search filter
+        if (query) {
+            filteredCats = filteredCats.filter(cat =>
+                (cat.name && cat.name.toLowerCase().includes(query)) ||
+                (cat.tag && cat.tag.toLowerCase().includes(query)) ||
+                (cat.description && cat.description.toLowerCase().includes(query))
+            );
+        }
+
+        renderGallery(filteredCats);
+    });
+}
+
+// ============ RENDER GALLERY ============
+function renderGallery(cats) {
+    if (!gallery) {
+        console.error("❌ Gallery element not found!");
+        return;
+    }
+
+    gallery.innerHTML = "";
+
+    if (!cats || cats.length === 0) {
+        gallery.innerHTML = '<div class="no-results">No cats found</div>';
+        renderPagination(cats.length);
+        return;
+    }
+
+    // Reset to page 1 when filtering
+    currentPage = 1;
+
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedCats = cats.slice(startIndex, endIndex);
+
+    paginatedCats.forEach(cat => {
+        const div = document.createElement("div");
+        div.className = "card";
+        div.innerHTML = `
+            ${cat.IMG ? `<img src="${cat.IMG}" alt="${cat.name}" loading="lazy" />` : '<div class="no-image">No Image</div>'}
+            <h3>${escapeHTML(cat.name) || 'Unnamed Cat'}</h3>
+            <p>${escapeHTML(cat.description) || 'No description available'}</p>
+            <span class="tag-badge">${escapeHTML(cat.tag) || 'No tag'}</span>
+            <div class="actions">
+                <button onclick="editCat(${cat.id})" class="btn-edit">Edit</button>
+                <button onclick="deleteCat(${cat.id})" class="btn-delete">Delete</button>
+            </div>
+        `;
+        gallery.appendChild(div);
+    });
+
+    renderPagination(cats.length);
+}
+
+// ============ PAGINATION ============
+function renderPagination(totalItems) {
+    const paginationContainer = document.getElementById("pagination");
+    if (!paginationContainer) return;
+
+    paginationContainer.innerHTML = "";
+
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+    if (totalPages <= 1) return;
+
+    for (let i = 1; i <= totalPages; i++) {
+        const btn = document.createElement("button");
+        btn.innerText = i;
+        btn.className = i === currentPage ? "active" : "";
+        btn.onclick = () => {
+            currentPage = i;
+            // Get current filtered cats
+            const tagFilter = document.getElementById('tag-filter');
+            const selectedTag = tagFilter ? tagFilter.value : '';
+            const searchQuery = searchInput ? searchInput.value.toLowerCase() : '';
+
+            let filteredCats = catsData;
+
+            if (selectedTag && selectedTag !== "") {
+                filteredCats = filteredCats.filter(cat => {
+                    const catTag = cat.tag ? cat.tag.trim().toLowerCase() : '';
+                    return catTag === selectedTag.toLowerCase();
+                });
+            }
+
+            if (searchQuery) {
+                filteredCats = filteredCats.filter(cat =>
+                    (cat.name && cat.name.toLowerCase().includes(searchQuery)) ||
+                    (cat.tag && cat.tag.toLowerCase().includes(searchQuery)) ||
+                    (cat.description && cat.description.toLowerCase().includes(searchQuery))
+                );
+            }
+
+            renderGalleryForPage(filteredCats);
+        };
+        paginationContainer.appendChild(btn);
+    }
+}
+
+function renderGalleryForPage(cats) {
+    if (!gallery) return;
+
+    gallery.innerHTML = "";
+
+    if (!cats || cats.length === 0) {
+        gallery.innerHTML = '<div class="no-results">No cats found</div>';
+        return;
+    }
+
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedCats = cats.slice(startIndex, endIndex);
+
+    paginatedCats.forEach(cat => {
+        const div = document.createElement("div");
+        div.className = "card";
+        div.innerHTML = `
+            ${cat.IMG ? `<img src="${cat.IMG}" alt="${cat.name}" loading="lazy" />` : '<div class="no-image">No Image</div>'}
+            <h3>${escapeHTML(cat.name) || 'Unnamed Cat'}</h3>
+            <p>${escapeHTML(cat.description) || 'No description available'}</p>
+            <span class="tag-badge">${escapeHTML(cat.tag) || 'No tag'}</span>
+            <div class="actions">
+                <button onclick="editCat(${cat.id})" class="btn-edit">Edit</button>
+                <button onclick="deleteCat(${cat.id})" class="btn-delete">Delete</button>
+            </div>
+        `;
+        gallery.appendChild(div);
+    });
+}
+
+// ============ MODAL FUNCTIONS ============
+function openAddModal() {
+    nameInput.value = "";
+    tagInput.value = "";
+    descriptionInput.value = "";
+    imgInput.value = "";
+    editingId = null;
+
+    document.getElementById("addBtn").style.display = "inline-block";
+    document.getElementById("editBtn").style.display = "none";
+
+    modal.style.display = "flex";
+}
+
+function closeModal() {
+    modal.style.display = "none";
+    editingId = null;
+}
+
+function addCat() {
+    const cat = {
+        name: nameInput.value,
+        tag: tagInput.value,
+        description: descriptionInput.value,
+        IMG: imgInput.value
+    };
+
+    if (!cat.name || !cat.name.trim()) {
+        showNotification('⚠️ Please enter a cat name', 'warning');
+        return;
+    }
+
+    showNotification('Adding cat...', 'info');
+
+    fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(cat)
+    })
+        .then(res => {
+            console.log("Add cat response:", res.status);
+            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+            return res.json();
+        })
+        .then(data => {
+            console.log("✅ Cat added:", data);
+            showNotification('✅ Cat added successfully!', 'success');
+            closeModal();
+            loadCats();
+            fetchTags(); // Refresh tags after adding new cat
+        })
+        .catch(err => {
+            console.error('❌ Error adding cat:', err);
+            showNotification('❌ Failed to add cat. Please try again.', 'error');
+        });
+}
+
+function editCat(id) {
+    const cat = catsData.find(c => c.id === id);
+    if (!cat) {
+        showNotification('Cat not found', 'error');
+        return;
+    }
+
+    editingId = id;
+
+    nameInput.value = cat.name;
+    tagInput.value = cat.tag;
+    descriptionInput.value = cat.description;
+    imgInput.value = cat.IMG || "";
+
+    document.getElementById("addBtn").style.display = "none";
+    document.getElementById("editBtn").style.display = "inline-block";
+
+    modal.style.display = "flex";
+}
+
+function updateCat() {
+    if (editingId === null) return;
+
+    const cat = {
+        name: nameInput.value,
+        tag: tagInput.value,
+        description: descriptionInput.value,
+        IMG: imgInput.value
+    };
+
+    if (!cat.name || !cat.name.trim()) {
+        showNotification('⚠️ Please enter a cat name', 'warning');
+        return;
+    }
+
+    showNotification('Updating cat...', 'info');
+
+    fetch(`${API_URL}/${editingId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(cat)
+    })
+        .then(res => {
+            console.log("Update cat response:", res.status);
+            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+            return res.json();
+        })
+        .then(data => {
+            console.log("✅ Cat updated:", data);
+            showNotification('✅ Cat updated successfully!', 'success');
+            closeModal();
+            loadCats();
+            fetchTags(); // Refresh tags after updating
+        })
+        .catch(err => {
+            console.error('❌ Error updating cat:', err);
+            showNotification('❌ Failed to update cat. Please try again.', 'error');
+        });
+}
+
+function deleteCat(id) {
+    if (!confirm('Are you sure you want to delete this cat?')) return;
+
+    showNotification('Deleting cat...', 'info');
+
+    fetch(`${API_URL}/${id}`, {
+        method: "DELETE"
+    })
+        .then(res => {
+            console.log("Delete cat response:", res.status);
+            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+            return res.json();
+        })
+        .then(data => {
+            console.log("✅ Cat deleted:", data);
+            showNotification('✅ Cat deleted successfully!', 'success');
+            loadCats();
+            fetchTags(); // Refresh tags after deletion
+        })
+        .catch(err => {
+            console.error('❌ Error deleting cat:', err);
+            showNotification('❌ Failed to delete cat. Please try again.', 'error');
+        });
+}
+
+// ============ EVENT LISTENERS SETUP ============
+function setupEventListeners() {
+    // Add Cat Button
+    const addCatBtn = document.getElementById("addCatBtn");
+    if (addCatBtn) {
+        addCatBtn.addEventListener("click", openAddModal);
+    }
+
+    // Tag Filter Change
+    if (tagFilter) {
+        tagFilter.addEventListener('change', function () {
+            const selectedTag = this.value;
+            console.log("🎯 Tag selected:", selectedTag);
+            filterCatsByTag(selectedTag);
+        });
+    }
+
+    // Search Input
+    setupSearch();
+
+    // Close modal when clicking outside
+    window.addEventListener('click', function (event) {
+        if (event.target === modal) {
+            closeModal();
+        }
+    });
+
+    // Close modal with Escape key
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+            closeModal();
+        }
+    });
+}
 
 // ============ UTILITY FUNCTIONS ============
+function showError(message) {
+    if (gallery) {
+        gallery.innerHTML = `<div class="error">${message}</div>`;
+    }
+    console.error("❌ Error:", message);
+}
+
+function showLoading() {
+    if (gallery) {
+        gallery.innerHTML = '<div class="loading">Loading cats...</div>';
+    }
+}
+
+function hideLoading() {
+    // Loading state is removed when renderGallery is called
+}
 
 function showNotification(message, type = 'info') {
     // Remove existing notification
@@ -591,16 +603,228 @@ function showNotification(message, type = 'info') {
     }, 5000);
 }
 
-// ============ MAKE FUNCTIONS GLOBALLY AVAILABLE ============
-window.showLoginModal = showLoginModal;
-window.showSignupModal = showSignupModal;
-window.closeLoginModal = closeAllModals;
-window.closeSignupModal = closeAllModals;
-window.handleLogout = handleLogout;
-window.showDashboard = showDashboard;
-window.showHome = showHome;
+function escapeHTML(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
 
-// Your existing global functions
+// Debug function
+function debugApp() {
+    console.log("=== 🐛 DEBUG INFO ===");
+    console.log("API URL:", API_URL);
+    console.log("Cats data:", catsData);
+    console.log("Cats count:", catsData.length);
+    console.log("Current tag filter:", currentTagFilter);
+    console.log("Current page:", currentPage);
+
+    // Test API
+    fetch(API_URL)
+        .then(res => console.log("Current API status:", res.status))
+        .catch(err => console.log("API error:", err.message));
+}
+
+//auth    
+//  // Navigation between sections
+document.querySelectorAll('.cyber-nav-link').forEach(link => {
+    link.addEventListener('click', function (e) {
+        e.preventDefault();
+        const targetId = this.getAttribute('href').substring(1);
+
+        // Update active nav link
+        document.querySelectorAll('.cyber-nav-link').forEach(l => l.classList.remove('active'));
+        this.classList.add('active');
+
+        // Show target section
+        document.querySelectorAll('.cyber-section').forEach(section => {
+            section.classList.remove('active');
+        });
+        document.getElementById(targetId).classList.add('active');
+    });
+});
+
+// Login/Signup buttons
+document.querySelector('.login-btn').addEventListener('click', function (e) {
+    e.preventDefault();
+    document.getElementById('login-modal').style.display = 'flex';
+});
+
+document.querySelector('.signup-btn').addEventListener('click', function (e) {
+    e.preventDefault();
+    document.getElementById('signup-modal').style.display = 'flex';
+});
+
+// Close modals
+function closeLoginModal() {
+    document.getElementById('login-modal').style.display = 'none';
+}
+
+function closeSignupModal() {
+    document.getElementById('signup-modal').style.display = 'none';
+}
+
+// Contact form submission
+document.querySelector('.contact-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    alert('Message sent securely!');
+    this.reset();
+});
+
+// Auth forms
+document.querySelectorAll('.auth-form').forEach(form => {
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        alert('Authentication successful!');
+        closeLoginModal();
+        closeSignupModal();
+    });
+});
+
+// Update cat count
+function updateCatCount(count) {
+    document.getElementById('catCount').textContent = count;
+}
+
+// Initialize with home section active
+document.addEventListener('DOMContentLoaded', function () {
+    document.getElementById('home').classList.add('active');
+
+    // Start typing animation
+    const title = document.querySelector('.terminal-header h1');
+    if (title) {
+        const text = title.textContent;
+        title.textContent = '';
+        let i = 0;
+        const typing = setInterval(() => {
+            if (i < text.length) {
+                title.textContent += text.charAt(i);
+                i++;
+            } else {
+                clearInterval(typing);
+            }
+        }, 50);
+    }
+});
+
+//login page
+
+// ============ SIGNUP FORM HANDLER ============
+async function handleSignup(e) {
+    e.preventDefault();
+    console.log("📝 Handling signup...");
+
+    const username = document.getElementById('signup-username').value;
+    const email = document.getElementById('signup-email').value;
+    const password = document.getElementById('signup-password').value;
+    const confirmPassword = document.getElementById('signup-confirm-password').value;
+
+    // Validation
+    if (!username || !email || !password || !confirmPassword) {
+        showNotification('All fields are required', 'error');
+        return;
+    }
+
+    if (password.length < 6) {
+        showNotification('Password must be at least 6 characters', 'error');
+        return;
+    }
+
+    if (password !== confirmPassword) {
+        showNotification('Passwords do not match', 'error');
+        return;
+    }
+
+    // Show loading state
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Account...';
+    submitBtn.disabled = true;
+
+    try {
+        console.log("📤 Sending signup request...");
+
+        const response = await fetch('/auth/register', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                username: username.trim(),
+                email: email.trim(),
+                password: password
+            })
+        });
+
+        const data = await response.json();
+        console.log("📥 Signup response:", data);
+
+        if (response.ok) {
+            // Save user to localStorage
+            currentUser = data.user;
+            authToken = data.token;
+            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            localStorage.setItem('authToken', authToken);
+
+            showNotification('✅ Account created successfully!', 'success');
+            closeSignupModal();
+
+            // Update UI
+            updateAuthUI();
+
+            // Show dashboard
+            showDashboard();
+
+        } else {
+            showNotification(data.error || 'Signup failed', 'error');
+        }
+    } catch (error) {
+        console.error('❌ Signup error:', error);
+        showNotification('Error during signup. Please try again.', 'error');
+    } finally {
+        // Reset button state
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    }
+}
+// Signup form submission
+const signupForm = document.getElementById('signup-form');
+if (signupForm) {
+    signupForm.addEventListener('submit', handleSignup);
+}
+
+// Signup button click
+const signupBtn = document.querySelector('.signup-btn');
+if (signupBtn) {
+    signupBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        console.log("📝 Signup button clicked");
+        showSignupModal();
+    });
+}
+// Show signup modal
+function showSignupModal() {
+    console.log("🔄 Showing signup modal");
+    closeAllModals();
+    document.getElementById('signup-modal').style.display = 'flex';
+}
+
+// Close signup modal
+function closeSignupModal() {
+    document.getElementById('signup-modal').style.display = 'none';
+    const form = document.getElementById('signup-form');
+    if (form) form.reset();
+}
+
+// Close all modals
+function closeAllModals() {
+    closeModal();
+    closeLoginModal();
+    closeSignupModal();
+}
+
+
+// Make debug function available globally
 window.debugApp = debugApp;
 window.clearFilter = clearFilter;
 window.editCat = editCat;
@@ -611,4 +835,6 @@ window.addCat = addCat;
 window.updateCat = updateCat;
 window.filterCatsByTag = filterCatsByTag;
 
-console.log("🐱 Cat Gallery Script Loaded with Authentication");
+// Initialize debug
+console.log("🐱 Cat Gallery Script Loaded");
+console.log("🌐 API Endpoint:", API_URL);

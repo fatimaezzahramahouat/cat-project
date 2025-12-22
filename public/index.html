@@ -16,7 +16,6 @@
 <body class="cyber-theme">
 
     <!-- Navigation Bar -->
-    <!-- Navigation Bar -->
     <nav class="cyber-nav">
         <div class="cyber-nav-container">
             <!-- Logo -->
@@ -27,34 +26,19 @@
 
             <!-- Navigation Links -->
             <ul class="cyber-nav-links">
-                <li><a href="#home" class="cyber-nav-link active" onclick="showSection('home')">
-                        <i class="fas fa-home"></i> HOME
-                    </a></li>
-                <li><a href="#dashboard" class="cyber-nav-link" onclick="showDashboard()" id="dashboard-link">
-                        <i class="fas fa-tachometer-alt"></i> DASHBOARD
-                    </a></li>
-                <li><a href="#about" class="cyber-nav-link" onclick="showSection('about')">
-                        <i class="fas fa-info-circle"></i> ABOUT
-                    </a></li>
-                <li><a href="#contact" class="cyber-nav-link" onclick="showSection('contact')">
-                        <i class="fas fa-envelope"></i> CONTACT
-                    </a></li>
-                <!-- Admin Links (only show for admin) -->
-                <li id="admin-users-link" style="display: none;">
-                    <a href="#admin-users" class="cyber-nav-link" onclick="showSection('admin-users')">
-                        <i class="fas fa-users-cog"></i> USERS
-                    </a>
-                </li>
-                <li id="admin-cats-link" style="display: none;">
-                    <a href="#admin-cats" class="cyber-nav-link" onclick="showSection('admin-cats')">
-                        <i class="fas fa-cat"></i> ALL CATS
-                    </a>
-                </li>
+                <li><a href="#home" class="cyber-nav-link active"><i class="fas fa-home"></i> HOME</a></li>
+                <li><a href="#about" class="cyber-nav-link"><i class="fas fa-info-circle"></i> ABOUT</a></li>
+                <li><a href="#contact" class="cyber-nav-link"><i class="fas fa-envelope"></i> CONTACT</a></li>
             </ul>
 
-            <!-- Authentication Area -->
-            <div class="cyber-auth" id="auth-container">
-                <!-- Will be populated by JavaScript -->
+            <!-- Login/Signup -->
+            <div class="cyber-auth">
+                <a href="#login" class="cyber-btn login-btn">
+                    <i class="fas fa-sign-in-alt"></i> LOGIN
+                </a>
+                <a href="#signup" class="cyber-btn signup-btn">
+                    <i class="fas fa-user-plus"></i> SIGN UP
+                </a>
             </div>
         </div>
     </nav>
@@ -111,80 +95,6 @@
             <div id="pagination" class="pagination"></div>
         </section>
 
-
-        <!-- User Dashboard Section -->
-        <section id="dashboard" class="cyber-section dashboard-section">
-            <div class="terminal-header">
-                <h1><i class="fas fa-tachometer-alt"></i> USER DASHBOARD</h1>
-                <p>Welcome back, <span id="username-display" class="cyber-text">USER</span></p>
-                <div class="terminal-status">
-                    <span class="status-dot online"></span>
-                    <span id="login-status">SESSION ACTIVE</span>
-                </div>
-            </div>
-
-            <!-- Dashboard will be loaded dynamically -->
-            <div id="dashboard-content"></div>
-        </section>
-
-        <!-- Admin Dashboard Section -->
-        <section id="admin-dashboard" class="cyber-section admin-section">
-            <div class="terminal-header">
-                <h1><i class="fas fa-crown"></i> ADMIN DASHBOARD</h1>
-                <p>System Administration Panel</p>
-                <div class="terminal-status">
-                    <span class="status-dot online"></span>
-                    <span>ADMIN PRIVILEGES ACTIVE</span>
-                </div>
-            </div>
-
-            <!-- Admin dashboard will be loaded dynamically -->
-            <div id="admin-dashboard-content"></div>
-        </section>
-
-        <!-- Admin Users Management Section -->
-        <section id="admin-users" class="cyber-section admin-section">
-            <div class="terminal-header">
-                <h1><i class="fas fa-users-cog"></i> USER MANAGEMENT</h1>
-                <p>Manage all registered users</p>
-            </div>
-
-            <div class="admin-controls">
-                <div class="search-field">
-                    <i class="fas fa-search"></i>
-                    <input type="text" id="user-search" placeholder="SEARCH USERS..." class="cyber-input" />
-                </div>
-                <button class="cyber-btn primary" onclick="exportUsers()">
-                    <i class="fas fa-download"></i> EXPORT USERS
-                </button>
-            </div>
-
-            <div id="users-list" class="admin-table-container">
-                <!-- Users table will be loaded here -->
-            </div>
-        </section>
-
-        <!-- Admin Cats Management Section -->
-        <section id="admin-cats" class="cyber-section admin-section">
-            <div class="terminal-header">
-                <h1><i class="fas fa-cat"></i> ALL CATS MANAGEMENT</h1>
-                <p>Manage all cats in the system</p>
-            </div>
-
-            <div class="admin-controls">
-                <div class="search-field">
-                    <i class="fas fa-search"></i>
-                    <input type="text" id="cats-search" placeholder="SEARCH CATS..." class="cyber-input" />
-                </div>
-                <button class="cyber-btn danger" onclick="deleteAllCats()">
-                    <i class="fas fa-trash"></i> DELETE ALL CATS
-                </button>
-            </div>
-
-            <div id="all-cats-list" class="admin-table-container">
-                <!-- All cats table will be loaded here -->
-            </div>
-        </section>
         <!-- About Section -->
         <section id="about" class="cyber-section">
             <div class="terminal-header">

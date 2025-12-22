@@ -5,6 +5,9 @@ const API_BASE = ""; // Same origin
 let currentUser = null;
 let editingCatId = null;
 // Authentication State
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+
 
 let isAuthenticated = false;
 // ============ DOM ELEMENTS ============
@@ -827,429 +830,690 @@ function closeAllModals() {
 }
 
 //authhhhh
+// ===== AUTHENTICATION SYSTEM FOR CLOUDFLARE WORKER =====
+class CloudflareAuthSystem {
+    constructor() {
+        // Your Cloudflare Worker URL
+        this.API_URL = 'https://your-worker-name.your-account.workers.dev/api';
+        this.currentUser = null;
+        this.isAuthenticated = false;
+        this.token = localStorage.getItem('catgallery_token');
 
-
-// Mock User Database (In production, use backend API)
-const mockUsers = [
-    {
-        id: 1,
-        username: 'admin',
-        email: 'admin@cattey.com',
-        password: 'password123',
-        joined: '2024-01-01',
-        role: 'admin',
-        cats: []
-    }
-];
-
-// Initialize authentication
-function initAuth() {
-    // Check if user is logged in from localStorage
-    const savedUser = localStorage.getItem('currentUser');
-    if (savedUser) {
-        currentUser = JSON.parse(savedUser);
-        isAuthenticated = true;
-        updateUIForAuth();
+        this.init();
     }
 
-    // Setup event listeners
-    setupAuthListeners();
-}
-
-// Setup authentication event listeners
-function setupAuthListeners() {
-    // Login form submit
-    const loginForm = document.getElementById('login-form');
-    if (loginForm) {
-        loginForm.addEventListener('submit', handleLogin);
+    async init() {
+        if (this.token) {
+            await this.verifyToken();
+        }
+        this.setupEventListeners();
+        this.updateUI();
     }
 
-    // Signup form submit
-    const signupForm = document.getElementById('signup-form');
-    if (signupForm) {
-        signupForm.addEventListener('submit', handleSignup);
+    // Save token
+    saveToken(token) {
+        this.token = token;
+        localStorage.setItem('catgallery_token', token);
     }
 
-    // Logout button
-    const logoutBtn = document.getElementById('logoutBtn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', handleLogout);
+    // Remove token
+    removeToken() {
+        this.token = null;
+        localStorage.removeItem('catgallery_token');
     }
 
-    // Login/Signup modal triggers
-    document.querySelectorAll('[href="#login"]').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            showLoginModal();
-        });
-    });
+    // Get authorization headers
+    getAuthHeaders() {
+        const headers = {
+            'Content-Type': 'application/json'
+        };
 
-    document.querySelectorAll('[href="#signup"]').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            showSignupModal();
-        });
-    });
-}
+        if (this.token) {
+            headers['Authorization'] = `Bearer ${this.token}`;
+        }
 
-// Handle Login
-function handleLogin(e) {
-    e.preventDefault();
-
-    const email = document.getElementById('login-email').value;
-    const password = document.getElementById('login-password').value;
-    const errorElement = document.getElementById('login-error');
-
-    // Clear previous errors
-    errorElement.style.display = 'none';
-
-    // Validate input
-    if (!email || !password) {
-        showError(errorElement, 'Please fill in all fields');
-        return;
+        return headers;
     }
 
-    // Find user (mock authentication)
-    const user = mockUsers.find(u => u.email === email && u.password === password);
+    // Verify token with backend
+    async verifyToken() {
+        try {
+            const response = await fetch(`${this.API_URL}/auth/verify`, {
+                headers: this.getAuthHeaders()
+            });
 
-    if (!user) {
-        showError(errorElement, 'Invalid email or password');
-        return;
+            if (response.ok) {
+                const data = await response.json();
+                this.currentUser = data.user;
+                this.isAuthenticated = true;
+                return true;
+            } else {
+                this.removeToken();
+                return false;
+            }
+        } catch (error) {
+            console.error('Token verification failed:', error);
+            return false;
+        }
     }
 
-    // Login successful
-    currentUser = {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-        joined: user.joined
-    };
+    // Handle registration
+    async handleRegister(e) {
+        e.preventDefault();
 
-    isAuthenticated = true;
+        const username = document.getElementById('signup-username').value;
+        const email = document.getElementById('signup-email').value;
+        const password = document.getElementById('signup-password').value;
+        const confirmPassword = document.getElementById('signup-confirm').value;
 
-    // Save to localStorage
-    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+        // Validation
+        if (!username || !email || !password || !confirmPassword) {
+            this.showError('Please fill in all fields');
+            return;
+        }
 
-    // Update UI
-    updateUIForAuth();
+        if (password !== confirmPassword) {
+            this.showError('Passwords do not match');
+            return;
+        }
 
-    // Close modal and show dashboard
-    closeModal('login-modal');
-    showDashboard();
+        if (password.length < 6) {
+            this.showError('Password must be at least 6 characters');
+            return;
+        }
 
-    // Clear form
-    document.getElementById('login-form').reset();
-}
+        try {
+            const response = await fetch(`${this.API_URL}/auth/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, email, password })
+            });
 
-// Handle Signup
-function handleSignup(e) {
-    e.preventDefault();
+            const data = await response.json();
 
-    const username = document.getElementById('signup-username').value;
-    const email = document.getElementById('signup-email').value;
-    const password = document.getElementById('signup-password').value;
-    const confirmPassword = document.getElementById('signup-confirm').value;
-    const errorElement = document.getElementById('signup-error');
+            if (response.ok) {
+                this.saveToken(data.token);
+                this.currentUser = data.user;
+                this.isAuthenticated = true;
 
-    // Clear previous errors
-    errorElement.style.display = 'none';
+                this.showNotification('Account created successfully!');
+                this.closeModal('signup-modal');
+                this.updateUI();
+                this.showDashboard();
 
-    // Validate input
-    if (!username || !email || !password || !confirmPassword) {
-        showError(errorElement, 'Please fill in all fields');
-        return;
+                document.getElementById('signup-form').reset();
+            } else {
+                this.showError(data.error);
+            }
+        } catch (error) {
+            this.showError('Network error. Please try again.');
+        }
     }
 
-    if (password !== confirmPassword) {
-        showError(errorElement, 'Passwords do not match');
-        return;
+    // Handle login
+    async handleLogin(e) {
+        e.preventDefault();
+
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
+
+        if (!email || !password) {
+            this.showError('Please fill in all fields');
+            return;
+        }
+
+        try {
+            const response = await fetch(`${this.API_URL}/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                this.saveToken(data.token);
+                this.currentUser = data.user;
+                this.isAuthenticated = true;
+
+                this.showNotification('Login successful!');
+                this.closeModal('login-modal');
+                this.updateUI();
+                this.showDashboard();
+
+                document.getElementById('login-form').reset();
+            } else {
+                this.showError(data.error);
+            }
+        } catch (error) {
+            this.showError('Network error. Please try again.');
+        }
     }
 
-    if (password.length < 6) {
-        showError(errorElement, 'Password must be at least 6 characters');
-        return;
+    // Handle logout
+    async handleLogout() {
+        this.currentUser = null;
+        this.isAuthenticated = false;
+        this.removeToken();
+
+        this.updateUI();
+        this.showHome();
+        this.showNotification('Logged out successfully');
     }
 
-    // Check if user exists
-    const userExists = mockUsers.some(u => u.email === email);
-    if (userExists) {
-        showError(errorElement, 'Email already registered');
-        return;
+    // Get user dashboard
+    async getUserDashboard() {
+        try {
+            const response = await fetch(`${this.API_URL}/users/me`, {
+                headers: this.getAuthHeaders()
+            });
+
+            if (response.ok) {
+                return await response.json();
+            } else {
+                if (response.status === 401) {
+                    this.handleLogout();
+                }
+                return null;
+            }
+        } catch (error) {
+            console.error('Failed to fetch dashboard:', error);
+            return null;
+        }
     }
 
-    // Create new user (mock registration)
-    const newUser = {
-        id: mockUsers.length + 1,
-        username: username,
-        email: email,
-        password: password,
-        joined: new Date().toISOString().split('T')[0],
-        role: 'user',
-        cats: []
-    };
+    // Get admin dashboard
+    async getAdminDashboard() {
+        try {
+            const response = await fetch(`${this.API_URL}/admin/stats`, {
+                headers: this.getAuthHeaders()
+            });
 
-    mockUsers.push(newUser);
+            if (response.ok) {
+                const stats = await response.json();
 
-    // Auto login after signup
-    currentUser = {
-        id: newUser.id,
-        username: newUser.username,
-        email: newUser.email,
-        role: newUser.role,
-        joined: newUser.joined
-    };
+                // Get users list
+                const usersResponse = await fetch(`${this.API_URL}/admin/users`, {
+                    headers: this.getAuthHeaders()
+                });
 
-    isAuthenticated = true;
-    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                if (usersResponse.ok) {
+                    const users = await usersResponse.json();
+                    return { ...stats, ...users };
+                }
+            }
+            return null;
+        } catch (error) {
+            console.error('Failed to fetch admin dashboard:', error);
+            return null;
+        }
+    }
 
-    // Update UI
-    updateUIForAuth();
+    // Add a cat
+    async addCat(catData) {
+        try {
+            const response = await fetch(`${this.API_URL}/cats`, {
+                method: 'POST',
+                headers: this.getAuthHeaders(),
+                body: JSON.stringify(catData)
+            });
 
-    // Close modal and show dashboard
-    closeModal('signup-modal');
-    showDashboard();
+            if (response.ok) {
+                return await response.json();
+            } else {
+                if (response.status === 401) {
+                    this.handleLogout();
+                }
+                return null;
+            }
+        } catch (error) {
+            console.error('Failed to add cat:', error);
+            return null;
+        }
+    }
 
-    // Clear form
-    document.getElementById('signup-form').reset();
-}
+    // Get all cats
+    async getAllCats() {
+        try {
+            const response = await fetch(`${this.API_URL}/cats`);
 
-// Handle Logout
-function handleLogout() {
-    currentUser = null;
-    isAuthenticated = false;
-    localStorage.removeItem('currentUser');
-    updateUIForAuth();
-    showHome(); // Go back to home
-}
+            if (response.ok) {
+                return await response.json();
+            }
+            return [];
+        } catch (error) {
+            console.error('Failed to fetch cats:', error);
+            return [];
+        }
+    }
 
-// Update UI based on authentication state
-function updateUIForAuth() {
-    const authButtons = document.querySelector('.cyber-auth');
-    const navLinks = document.querySelector('.cyber-nav-links');
+    // Update UI based on auth state
+    updateUI() {
+        const authContainer = document.getElementById('auth-container');
+        const dashboardLink = document.getElementById('dashboard-link');
+        const adminLinks = document.getElementById('admin-links');
 
-    if (isAuthenticated && currentUser) {
-        // Replace auth buttons with user info
-        authButtons.innerHTML = `
-            <div class="user-info">
-                <div class="user-avatar">
-                    <i class="fas fa-user"></i>
+        if (this.isAuthenticated && this.currentUser) {
+            // Show user info
+            authContainer.innerHTML = `
+                <div class="user-info">
+                    <div class="user-avatar" onclick="auth.showDashboard()" title="Dashboard">
+                        ${this.currentUser.avatar || '😺'}
+                    </div>
+                    <div class="user-details">
+                        <span class="user-name">${this.currentUser.username}</span>
+                        <span class="user-role">${this.currentUser.role.toUpperCase()}</span>
+                    </div>
+                    <button class="cyber-btn logout-btn" onclick="auth.handleLogout()">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
                 </div>
-                <div class="user-details">
-                    <span class="user-name">${currentUser.username}</span>
-                    <span class="user-role">${currentUser.role.toUpperCase()}</span>
+            `;
+
+            // Show dashboard link
+            if (dashboardLink) dashboardLink.style.display = 'block';
+
+            // Show admin links if user is admin
+            if (this.currentUser.role === 'admin' && adminLinks) {
+                adminLinks.style.display = 'flex';
+            }
+
+        } else {
+            // Show login/signup buttons
+            authContainer.innerHTML = `
+                <a href="#login" class="cyber-btn login-btn" onclick="auth.showLoginModal()">
+                    <i class="fas fa-sign-in-alt"></i> LOGIN
+                </a>
+                <a href="#signup" class="cyber-btn signup-btn" onclick="auth.showSignupModal()">
+                    <i class="fas fa-user-plus"></i> SIGN UP
+                </a>
+            `;
+
+            // Hide dashboard link
+            if (dashboardLink) dashboardLink.style.display = 'none';
+
+            // Hide admin links
+            if (adminLinks) adminLinks.style.display = 'none';
+        }
+    }
+
+    // Show user dashboard
+    async showUserDashboard() {
+        const data = await this.getUserDashboard();
+
+        if (!data) {
+            this.showError('Failed to load dashboard');
+            return;
+        }
+
+        const dashboardContent = `
+            <div class="dashboard-grid">
+                <!-- Profile Card -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <i class="fas fa-user-circle"></i>
+                        <h3>MY PROFILE</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="profile-info">
+                            <div class="info-row">
+                                <span class="info-label">USERNAME:</span>
+                                <span class="info-value">${data.user.username}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">EMAIL:</span>
+                                <span class="info-value">${data.user.email}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">MEMBER SINCE:</span>
+                                <span class="info-value">${new Date(data.user.joined).toLocaleDateString()}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">ROLE:</span>
+                                <span class="info-value">${data.user.role.toUpperCase()}</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <button class="cyber-btn logout-btn" onclick="handleLogout()">
-                    <i class="fas fa-sign-out-alt"></i>
-                </button>
+                
+                <!-- Stats Card -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <i class="fas fa-chart-bar"></i>
+                        <h3>MY STATS</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="stats-grid">
+                            <div class="stat-item">
+                                <i class="fas fa-cat"></i>
+                                <span class="stat-value">${data.stats.totalCats}</span>
+                                <span class="stat-label">CATS POSTED</span>
+                            </div>
+                            <div class="stat-item">
+                                <i class="fas fa-heart"></i>
+                                <span class="stat-value">${data.stats.totalLikes}</span>
+                                <span class="stat-label">TOTAL LIKES</span>
+                            </div>
+                            <div class="stat-item">
+                                <i class="fas fa-eye"></i>
+                                <span class="stat-value">${data.user.profileViews}</span>
+                                <span class="stat-label">PROFILE VIEWS</span>
+                            </div>
+                            <div class="stat-item">
+                                <i class="fas fa-star"></i>
+                                <span class="stat-value">${data.stats.averageLikes}</span>
+                                <span class="stat-label">AVG LIKES</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- My Cats Card -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <i class="fas fa-images"></i>
+                        <h3>MY RECENT CATS</h3>
+                    </div>
+                    <div class="card-content">
+                        ${data.recentCats.length > 0 ? `
+                            <div class="mini-gallery">
+                                ${data.recentCats.slice(0, 6).map(cat => `
+                                    <div class="mini-cat-card" onclick="showCatDetails('${cat.id}')">
+                                        <img src="${cat.img}" alt="${cat.name}" 
+                                             onerror="this.src='https://placekitten.com/200/200'">
+                                        <div class="mini-cat-info">${cat.name}</div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : `
+                            <div class="empty-state">
+                                <i class="fas fa-cat"></i>
+                                <p>No cats posted yet</p>
+                                <button onclick="showCatModal()" class="cyber-btn small">
+                                    Add Your First Cat
+                                </button>
+                            </div>
+                        `}
+                    </div>
+                </div>
+                
+                <!-- Activity Card -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <i class="fas fa-history"></i>
+                        <h3>RECENT ACTIVITY</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="activity-feed">
+                            ${data.activities.length > 0 ?
+                data.activities.map(activity => `
+                                    <div class="activity-item">
+                                        <span>${activity.action}</span>
+                                        <time>${new Date(activity.timestamp).toLocaleString()}</time>
+                                    </div>
+                                `).join('') :
+                '<div class="empty-state">No recent activity</div>'
+            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <h3><i class="fas fa-bolt"></i> QUICK ACTIONS</h3>
+                <div class="action-buttons">
+                    <button onclick="showCatModal()" class="cyber-btn primary">
+                        <i class="fas fa-plus"></i> ADD NEW CAT
+                    </button>
+                    <button onclick="auth.showEditProfile()" class="cyber-btn">
+                        <i class="fas fa-edit"></i> EDIT PROFILE
+                    </button>
+                </div>
             </div>
         `;
 
-        // Add dashboard link to navigation
-        const dashboardLink = document.createElement('li');
-        dashboardLink.innerHTML = `
-            <a href="#dashboard" class="cyber-nav-link" onclick="showDashboard()">
-                <i class="fas fa-dashboard"></i> DASHBOARD
-            </a>
-        `;
-        navLinks.appendChild(dashboardLink);
+        document.getElementById('dashboard-content').innerHTML = dashboardContent;
+        this.showSection('dashboard');
+    }
 
-        // Update dashboard display
-        updateDashboard();
-    } else {
-        // Show login/signup buttons
-        authButtons.innerHTML = `
-            <a href="#login" class="cyber-btn login-btn" onclick="showLoginModal()">
-                <i class="fas fa-sign-in-alt"></i> LOGIN
-            </a>
-            <a href="#signup" class="cyber-btn signup-btn" onclick="showSignupModal()">
-                <i class="fas fa-user-plus"></i> SIGN UP
-            </a>
+    // Show admin dashboard
+    async showAdminDashboard() {
+        const data = await this.getAdminDashboard();
+
+        if (!data) {
+            this.showError('Failed to load admin dashboard');
+            return;
+        }
+
+        const adminContent = `
+            <div class="admin-grid">
+                <!-- Stats Overview -->
+                <div class="admin-stats-grid">
+                    <div class="admin-stat-card">
+                        <i class="fas fa-users"></i>
+                        <div class="stat-info">
+                            <h3>${data.stats.totalUsers}</h3>
+                            <p>TOTAL USERS</p>
+                        </div>
+                    </div>
+                    <div class="admin-stat-card">
+                        <i class="fas fa-cat"></i>
+                        <div class="stat-info">
+                            <h3>${data.stats.totalCats}</h3>
+                            <p>TOTAL CATS</p>
+                        </div>
+                    </div>
+                    <div class="admin-stat-card">
+                        <i class="fas fa-heart"></i>
+                        <div class="stat-info">
+                            <h3>${data.stats.totalLikes}</h3>
+                            <p>TOTAL LIKES</p>
+                        </div>
+                    </div>
+                    <div class="admin-stat-card">
+                        <i class="fas fa-chart-line"></i>
+                        <div class="stat-info">
+                            <h3>${data.stats.activeUsers}</h3>
+                            <p>ACTIVE USERS</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Recent Users -->
+                <div class="admin-card">
+                    <div class="card-header">
+                        <i class="fas fa-user-plus"></i>
+                        <h3>RECENT USERS</h3>
+                    </div>
+                    <div class="card-content">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>USERNAME</th>
+                                    <th>EMAIL</th>
+                                    <th>JOINED</th>
+                                    <th>STATUS</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${data.users.slice(0, 5).map(user => `
+                                    <tr>
+                                        <td>${user.username}</td>
+                                        <td>${user.email}</td>
+                                        <td>${new Date(user.joined).toLocaleDateString()}</td>
+                                        <td><span class="status-badge ${user.status}">${user.status.toUpperCase()}</span></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- System Actions -->
+                <div class="admin-card">
+                    <div class="card-header">
+                        <i class="fas fa-cogs"></i>
+                        <h3>SYSTEM ACTIONS</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="system-actions">
+                            <button onclick="auth.showUsersManagement()" class="cyber-btn primary">
+                                <i class="fas fa-users-cog"></i> MANAGE USERS
+                            </button>
+                            <button onclick="auth.showAllCatsManagement()" class="cyber-btn">
+                                <i class="fas fa-cat"></i> MANAGE CATS
+                            </button>
+                            <button onclick="auth.exportData()" class="cyber-btn">
+                                <i class="fas fa-download"></i> EXPORT DATA
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         `;
 
-        // Remove dashboard link
-        const dashboardLink = navLinks.querySelector('a[href="#dashboard"]');
-        if (dashboardLink) {
-            dashboardLink.parentElement.remove();
+        document.getElementById('admin-dashboard-content').innerHTML = adminContent;
+        this.showSection('admin-dashboard');
+    }
+
+    // Show dashboard based on user role
+    async showDashboard() {
+        if (!this.isAuthenticated) {
+            this.showLoginModal();
+            return;
+        }
+
+        if (this.currentUser.role === 'admin') {
+            await this.showAdminDashboard();
+        } else {
+            await this.showUserDashboard();
         }
     }
-}
 
-// Update Dashboard
-function updateDashboard() {
-    if (!currentUser) return;
-
-    // Update user info
-    document.getElementById('username-display').textContent = currentUser.username;
-    document.getElementById('dashboard-username').textContent = currentUser.username;
-    document.getElementById('dashboard-email').textContent = currentUser.email;
-    document.getElementById('dashboard-joined').textContent = currentUser.joined;
-
-    // Count user's cats (filter by owner)
-    const userCats = cats.filter(cat => cat.ownerId === currentUser.id);
-    document.getElementById('my-cats-count').textContent = userCats.length;
-
-    // Display user's cats
-    const myCatsGallery = document.getElementById('my-cats-gallery');
-    myCatsGallery.innerHTML = '';
-
-    userCats.slice(0, 6).forEach(cat => {
-        const catElement = document.createElement('div');
-        catElement.className = 'mini-cat-card';
-        catElement.innerHTML = `
-            <img src="${cat.img}" alt="${cat.name}" onerror="this.src='https://placekitten.com/200/200'">
-        `;
-        catElement.onclick = () => showCatDetails(cat.id);
-        myCatsGallery.appendChild(catElement);
-    });
-
-    // Update activity feed
-    updateActivityFeed();
-}
-
-// Update Activity Feed
-function updateActivityFeed() {
-    const activityFeed = document.getElementById('activity-feed');
-    if (!activityFeed) return;
-
-    const activities = [
-        { action: 'Logged in to dashboard', time: 'Just now' },
-        { action: 'Added new cat: "Whiskers"', time: '2 hours ago' },
-        { action: 'Updated profile information', time: '1 day ago' },
-        { action: 'Liked 5 cat photos', time: '2 days ago' }
-    ];
-
-    activityFeed.innerHTML = activities.map(activity => `
-        <div class="activity-item">
-            ${activity.action}
-            <time>${activity.time}</time>
-        </div>
-    `).join('');
-}
-
-// Show Dashboard
-function showDashboard() {
-    if (!isAuthenticated) {
-        showLoginModal();
-        return;
-    }
-
-    // Hide all sections
-    document.querySelectorAll('.cyber-section').forEach(section => {
-        section.classList.remove('active');
-    });
-
-    // Show dashboard
-    const dashboard = document.getElementById('dashboard');
-    if (dashboard) {
-        dashboard.classList.add('active');
-        updateDashboard();
-    }
-
-    // Update navigation
-    document.querySelectorAll('.cyber-nav-link').forEach(link => {
-        link.classList.remove('active');
-    });
-}
-
-// Show Login Modal
-function showLoginModal() {
-    closeAllModals();
-    document.getElementById('login-modal').style.display = 'flex';
-    document.getElementById('login-email').focus();
-}
-
-// Show Signup Modal
-function showSignupModal() {
-    closeAllModals();
-    document.getElementById('signup-modal').style.display = 'flex';
-    document.getElementById('signup-username').focus();
-}
-
-// Show Error Message
-function showError(element, message) {
-    element.textContent = message;
-    element.style.display = 'block';
-}
-
-// Update your existing closeModal function
-function closeModal(modalId) {
-    document.getElementById(modalId).style.display = 'none';
-}
-
-function closeAllModals() {
-    document.querySelectorAll('.cyber-modal').forEach(modal => {
-        modal.style.display = 'none';
-    });
-}
-
-// Update your existing cat adding function to include owner
-function addCat() {
-    if (!isAuthenticated) {
-        showLoginModal();
-        return;
-    }
-
-    const name = document.getElementById('name').value;
-    const tag = document.getElementById('tag').value;
-    const img = document.getElementById('img').value;
-    const description = document.getElementById('description').value;
-
-    if (!name || !img) {
-        alert('Please fill in at least name and image URL');
-        return;
-    }
-
-    const newCat = {
-        id: cats.length + 1,
-        name: name,
-        tag: tag.toLowerCase(),
-        img: img || 'https://placekitten.com/400/300',
-        description: description,
-        likes: 0,
-        ownerId: currentUser.id,
-        ownerName: currentUser.username,
-        date: new Date().toISOString().split('T')[0]
-    };
-
-    cats.unshift(newCat);
-
-    // Close modal and update display
-    closeCatModal();
-    displayCats();
-    updateDashboard(); // Refresh dashboard
-
-    // Clear form
-    document.getElementById('name').value = '';
-    document.getElementById('tag').value = '';
-    document.getElementById('img').value = '';
-    document.getElementById('description').value = '';
-}
-
-// Initialize authentication when page loads
-document.addEventListener('DOMContentLoaded', function () {
-    initAuth();
-
-    // Add dashboard link to navigation if authenticated
-    if (isAuthenticated) {
-        updateUIForAuth();
-    }
-});
-// In your existing navigation code, add:
-document.addEventListener('DOMContentLoaded', function () {
-    // ... existing navigation code ...
-
-    // Add dashboard navigation
-    document.querySelectorAll('a[href="#dashboard"]').forEach(link => {
-        link.addEventListener('click', (e) => {
-            e.preventDefault();
-            showDashboard();
+    // Show section helper
+    showSection(sectionId) {
+        // Hide all sections
+        document.querySelectorAll('.cyber-section').forEach(section => {
+            section.classList.remove('active');
         });
-    });
 
-    // Initialize auth
-    initAuth();
-});
+        // Show requested section
+        const section = document.getElementById(sectionId);
+        if (section) {
+            section.classList.add('active');
+        }
+
+        // Update navigation
+        this.updateActiveNav(sectionId);
+    }
+
+    // Update active navigation
+    updateActiveNav(activeSection) {
+        document.querySelectorAll('.cyber-nav-link').forEach(link => {
+            link.classList.remove('active');
+        });
+
+        const activeLink = document.querySelector(`.cyber-nav-link[href="#${activeSection}"]`);
+        if (activeLink) {
+            activeLink.classList.add('active');
+        }
+    }
+
+    // Show login modal
+    showLoginModal() {
+        this.closeAllModals();
+        document.getElementById('login-modal').style.display = 'flex';
+        document.getElementById('login-email').focus();
+    }
+
+    // Show signup modal
+    showSignupModal() {
+        this.closeAllModals();
+        document.getElementById('signup-modal').style.display = 'flex';
+        document.getElementById('signup-username').focus();
+    }
+
+    // Close modal
+    closeModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
+    }
+
+    // Close all modals
+    closeAllModals() {
+        document.querySelectorAll('.cyber-modal').forEach(modal => {
+            modal.style.display = 'none';
+        });
+    }
+
+    // Show home section
+    showHome() {
+        this.showSection('home');
+    }
+
+    // Show error message
+    showError(message) {
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'cyber-notification error';
+        errorDiv.innerHTML = `
+            <i class="fas fa-exclamation-circle"></i>
+            <span>${message}</span>
+        `;
+
+        document.body.appendChild(errorDiv);
+
+        setTimeout(() => {
+            errorDiv.classList.add('fade-out');
+            setTimeout(() => errorDiv.remove(), 300);
+        }, 3000);
+    }
+
+    // Show notification
+    showNotification(message) {
+        const notification = document.createElement('div');
+        notification.className = 'cyber-notification success';
+        notification.innerHTML = `
+            <i class="fas fa-check-circle"></i>
+            <span>${message}</span>
+        `;
+
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            notification.classList.add('fade-out');
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
+    }
+
+    // Setup event listeners
+    setupEventListeners() {
+        // Login form
+        const loginForm = document.getElementById('login-form');
+        if (loginForm) {
+            loginForm.addEventListener('submit', (e) => this.handleLogin(e));
+        }
+
+        // Signup form
+        const signupForm = document.getElementById('signup-form');
+        if (signupForm) {
+            signupForm.addEventListener('submit', (e) => this.handleRegister(e));
+        }
+
+        // Modal close buttons
+        document.querySelectorAll('.modal-close').forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.closeAllModals();
+            });
+        });
+    }
+}
+
+// Initialize the auth system
+const auth = new CloudflareAuthSystem();
+
+// Make it globally available
+window.auth = auth;
+
 // Make debug function available globally
 window.debugApp = debugApp;
 window.clearFilter = clearFilter;

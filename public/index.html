@@ -16,6 +16,7 @@
 <body class="cyber-theme">
 
     <!-- Navigation Bar -->
+    <!-- Navigation Bar -->
     <nav class="cyber-nav">
         <div class="cyber-nav-container">
             <!-- Logo -->
@@ -26,121 +27,40 @@
 
             <!-- Navigation Links -->
             <ul class="cyber-nav-links">
-                <li><a href="#home" class="cyber-nav-link active"><i class="fas fa-home"></i> HOME</a></li>
-                <li><a href="#about" class="cyber-nav-link"><i class="fas fa-info-circle"></i> ABOUT</a></li>
-                <li><a href="#contact" class="cyber-nav-link"><i class="fas fa-envelope"></i> CONTACT</a></li>
+                <li><a href="#home" class="cyber-nav-link active" onclick="showSection('home')">
+                        <i class="fas fa-home"></i> HOME
+                    </a></li>
+                <li><a href="#dashboard" class="cyber-nav-link" onclick="showDashboard()" id="dashboard-link">
+                        <i class="fas fa-tachometer-alt"></i> DASHBOARD
+                    </a></li>
+                <li><a href="#about" class="cyber-nav-link" onclick="showSection('about')">
+                        <i class="fas fa-info-circle"></i> ABOUT
+                    </a></li>
+                <li><a href="#contact" class="cyber-nav-link" onclick="showSection('contact')">
+                        <i class="fas fa-envelope"></i> CONTACT
+                    </a></li>
+                <!-- Admin Links (only show for admin) -->
+                <li id="admin-users-link" style="display: none;">
+                    <a href="#admin-users" class="cyber-nav-link" onclick="showSection('admin-users')">
+                        <i class="fas fa-users-cog"></i> USERS
+                    </a>
+                </li>
+                <li id="admin-cats-link" style="display: none;">
+                    <a href="#admin-cats" class="cyber-nav-link" onclick="showSection('admin-cats')">
+                        <i class="fas fa-cat"></i> ALL CATS
+                    </a>
+                </li>
             </ul>
 
-            <!-- Login/Signup -->
-            <div class="cyber-auth">
-                <a href="#login" class="cyber-btn login-btn">
-                    <i class="fas fa-sign-in-alt"></i> LOGIN
-                </a>
-                <a href="#signup" class="cyber-btn signup-btn">
-                    <i class="fas fa-user-plus"></i> SIGN UP
-                </a>
+            <!-- Authentication Area -->
+            <div class="cyber-auth" id="auth-container">
+                <!-- Will be populated by JavaScript -->
             </div>
         </div>
     </nav>
 
     <!-- Main Content -->
     <div class="cyber-main-container">
-
-        <!-- Dashboard Section (Hidden by default) -->
-        <section id="dashboard" class="cyber-section dashboard-section">
-            <div class="terminal-header">
-                <h1><i class="fas fa-dashboard"></i> USER DASHBOARD</h1>
-                <p>Welcome back, <span id="username-display">User</span>!</p>
-                <div class="terminal-status">
-                    <span class="status-dot online"></span>
-                    USER SESSION ACTIVE
-                </div>
-            </div>
-
-            <div class="dashboard-grid">
-                <!-- User Stats Card -->
-                <div class="dashboard-card">
-                    <div class="card-header">
-                        <i class="fas fa-user-circle"></i>
-                        <h3>MY PROFILE</h3>
-                    </div>
-                    <div class="card-content">
-                        <div class="profile-info">
-                            <div class="info-row">
-                                <span class="info-label">Username:</span>
-                                <span id="dashboard-username" class="info-value"></span>
-                            </div>
-                            <div class="info-row">
-                                <span class="info-label">Email:</span>
-                                <span id="dashboard-email" class="info-value"></span>
-                            </div>
-                            <div class="info-row">
-                                <span class="info-label">Member Since:</span>
-                                <span id="dashboard-joined" class="info-value"></span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- My Cats Card -->
-                <div class="dashboard-card">
-                    <div class="card-header">
-                        <i class="fas fa-cat"></i>
-                        <h3>MY CATS</h3>
-                    </div>
-                    <div class="card-content">
-                        <div class="cats-count">
-                            <div class="count-display">
-                                <span id="my-cats-count">0</span>
-                                <small>CATS POSTED</small>
-                            </div>
-                        </div>
-                        <div id="my-cats-gallery" class="mini-gallery">
-                            <!-- User's cats will appear here -->
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Quick Actions Card -->
-                <div class="dashboard-card">
-                    <div class="card-header">
-                        <i class="fas fa-bolt"></i>
-                        <h3>QUICK ACTIONS</h3>
-                    </div>
-                    <div class="card-content">
-                        <div class="action-buttons">
-                            <button class="cyber-btn primary" onclick="showCatModal()">
-                                <i class="fas fa-plus"></i> ADD NEW CAT
-                            </button>
-                            <button class="cyber-btn" onclick="showEditProfile()">
-                                <i class="fas fa-edit"></i> EDIT PROFILE
-                            </button>
-                            <button class="cyber-btn" id="logoutBtn">
-                                <i class="fas fa-sign-out-alt"></i> LOGOUT
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Recent Activity Card -->
-                <div class="dashboard-card">
-                    <div class="card-header">
-                        <i class="fas fa-history"></i>
-                        <h3>RECENT ACTIVITY</h3>
-                    </div>
-                    <div class="card-content">
-                        <div id="activity-feed" class="activity-feed">
-                            <!-- Activity items will appear here -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Rest of your existing sections (Home, About, Contact) -->
-        <!-- ... existing code ... -->
-
-
 
         <!-- Home Section (Cat Gallery) -->
         <section id="home" class="cyber-section active">
@@ -191,6 +111,80 @@
             <div id="pagination" class="pagination"></div>
         </section>
 
+
+        <!-- User Dashboard Section -->
+        <section id="dashboard" class="cyber-section dashboard-section">
+            <div class="terminal-header">
+                <h1><i class="fas fa-tachometer-alt"></i> USER DASHBOARD</h1>
+                <p>Welcome back, <span id="username-display" class="cyber-text">USER</span></p>
+                <div class="terminal-status">
+                    <span class="status-dot online"></span>
+                    <span id="login-status">SESSION ACTIVE</span>
+                </div>
+            </div>
+
+            <!-- Dashboard will be loaded dynamically -->
+            <div id="dashboard-content"></div>
+        </section>
+
+        <!-- Admin Dashboard Section -->
+        <section id="admin-dashboard" class="cyber-section admin-section">
+            <div class="terminal-header">
+                <h1><i class="fas fa-crown"></i> ADMIN DASHBOARD</h1>
+                <p>System Administration Panel</p>
+                <div class="terminal-status">
+                    <span class="status-dot online"></span>
+                    <span>ADMIN PRIVILEGES ACTIVE</span>
+                </div>
+            </div>
+
+            <!-- Admin dashboard will be loaded dynamically -->
+            <div id="admin-dashboard-content"></div>
+        </section>
+
+        <!-- Admin Users Management Section -->
+        <section id="admin-users" class="cyber-section admin-section">
+            <div class="terminal-header">
+                <h1><i class="fas fa-users-cog"></i> USER MANAGEMENT</h1>
+                <p>Manage all registered users</p>
+            </div>
+
+            <div class="admin-controls">
+                <div class="search-field">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="user-search" placeholder="SEARCH USERS..." class="cyber-input" />
+                </div>
+                <button class="cyber-btn primary" onclick="exportUsers()">
+                    <i class="fas fa-download"></i> EXPORT USERS
+                </button>
+            </div>
+
+            <div id="users-list" class="admin-table-container">
+                <!-- Users table will be loaded here -->
+            </div>
+        </section>
+
+        <!-- Admin Cats Management Section -->
+        <section id="admin-cats" class="cyber-section admin-section">
+            <div class="terminal-header">
+                <h1><i class="fas fa-cat"></i> ALL CATS MANAGEMENT</h1>
+                <p>Manage all cats in the system</p>
+            </div>
+
+            <div class="admin-controls">
+                <div class="search-field">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="cats-search" placeholder="SEARCH CATS..." class="cyber-input" />
+                </div>
+                <button class="cyber-btn danger" onclick="deleteAllCats()">
+                    <i class="fas fa-trash"></i> DELETE ALL CATS
+                </button>
+            </div>
+
+            <div id="all-cats-list" class="admin-table-container">
+                <!-- All cats table will be loaded here -->
+            </div>
+        </section>
         <!-- About Section -->
         <section id="about" class="cyber-section">
             <div class="terminal-header">
@@ -317,78 +311,61 @@
             </div>
         </section>
 
-        <!-- Update Login Modal -->
+        <!-- Login Modal -->
         <div id="login-modal" class="cyber-modal">
             <div class="modal-terminal">
                 <div class="modal-header">
                     <h3><i class="fas fa-sign-in-alt"></i> SECURE LOGIN</h3>
-                    <button class="modal-close" onclick="closeModal('login-modal')"><i
-                            class="fas fa-times"></i></button>
+                    <button class="modal-close" onclick="closeLoginModal()"><i class="fas fa-times"></i></button>
                 </div>
                 <div class="modal-content">
-                    <form id="login-form" class="auth-form">
-                        <div id="login-error" class="error-message" style="display: none;"></div>
+                    <form class="auth-form">
                         <div class="form-group">
-                            <label><i class="fas fa-user"></i> EMAIL</label>
-                            <input type="email" id="login-email" class="cyber-input" placeholder="ENTER YOUR EMAIL"
-                                required />
+                            <label><i class="fas fa-user"></i> USERNAME</label>
+                            <input type="text" class="cyber-input" placeholder="ENTER USERNAME" />
                         </div>
                         <div class="form-group">
                             <label><i class="fas fa-lock"></i> PASSWORD</label>
-                            <input type="password" id="login-password" class="cyber-input" placeholder="ENTER PASSWORD"
-                                required />
+                            <input type="password" class="cyber-input" placeholder="ENTER PASSWORD" />
                         </div>
-                        <button type="submit" class="cyber-btn primary">
-                            <i class="fas fa-sign-in-alt"></i> LOGIN
-                        </button>
-                        <p class="auth-link">Don't have an account? <a href="#" onclick="showSignupModal()">Sign Up</a>
-                        </p>
+                        <button type="submit" class="cyber-btn primary">LOGIN</button>
+                        <p class="auth-link">Don't have an account? <a href="#signup">Sign Up</a></p>
                     </form>
                 </div>
             </div>
         </div>
 
-        <!-- Update Signup Modal -->
+        <!-- Sign Up Modal -->
         <div id="signup-modal" class="cyber-modal">
             <div class="modal-terminal">
                 <div class="modal-header">
                     <h3><i class="fas fa-user-plus"></i> CREATE ACCOUNT</h3>
-                    <button class="modal-close" onclick="closeModal('signup-modal')"><i
-                            class="fas fa-times"></i></button>
+                    <button class="modal-close" onclick="closeSignupModal()"><i class="fas fa-times"></i></button>
                 </div>
                 <div class="modal-content">
-                    <form id="signup-form" class="auth-form">
-                        <div id="signup-error" class="error-message" style="display: none;"></div>
+                    <form class="auth-form">
                         <div class="form-group">
-                            <label><i class="fas fa-user"></i> USERNAME</label>
-                            <input type="text" id="signup-username" class="cyber-input" placeholder="CHOOSE USERNAME"
-                                required />
+                            <label><i class="fas fa-user"></i> FULL NAME</label>
+                            <input type="text" class="cyber-input" placeholder="ENTER FULL NAME" />
                         </div>
                         <div class="form-group">
                             <label><i class="fas fa-envelope"></i> EMAIL</label>
-                            <input type="email" id="signup-email" class="cyber-input" placeholder="ENTER EMAIL"
-                                required />
+                            <input type="email" class="cyber-input" placeholder="ENTER EMAIL" />
                         </div>
                         <div class="form-group">
                             <label><i class="fas fa-lock"></i> PASSWORD</label>
-                            <input type="password" id="signup-password" class="cyber-input"
-                                placeholder="CREATE PASSWORD" required />
+                            <input type="password" class="cyber-input" placeholder="CREATE PASSWORD" />
                         </div>
                         <div class="form-group">
                             <label><i class="fas fa-lock"></i> CONFIRM PASSWORD</label>
-                            <input type="password" id="signup-confirm" class="cyber-input"
-                                placeholder="CONFIRM PASSWORD" required />
+                            <input type="password" class="cyber-input" placeholder="CONFIRM PASSWORD" />
                         </div>
-                        <button type="submit" class="cyber-btn primary">
-                            <i class="fas fa-user-plus"></i> SIGN UP
-                        </button>
-                        <p class="auth-link">Already have an account? <a href="#" onclick="showLoginModal()">Login</a>
-                        </p>
+                        <button type="submit" class="cyber-btn primary">SIGN UP</button>
+                        <p class="auth-link">Already have an account? <a href="#login">Login</a></p>
                     </form>
                 </div>
             </div>
         </div>
-
 
         <!-- Cat Modal (Same as before) -->
         <div class="modal" id="catModal">

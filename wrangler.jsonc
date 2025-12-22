@@ -1,20 +1,19 @@
 {
     "name": "cat-project",
-    "version": "1.0.0",
-    "description": "Cat Gallery Platform with Authentication",
     "main": "app.js",
-    "type": "module",
-    "scripts": {
-        "dev": "wrangler dev",
-        "deploy": "wrangler deploy",
-        "db:local": "wrangler d1 execute nodejsp --local",
-        "db:prod": "wrangler d1 execute nodejsp --remote"
-    },
-    "dependencies": {
-        "bcryptjs": "^2.4.3",
-        "jsonwebtoken": "^9.0.2"
-    },
-    "devDependencies": {
-        "wrangler": "^3.0.0"
+    "compatibility_date": "2025-12-18",
+    "compatibility_flags": [
+        "nodejs_compat"
+    ],
+    "d1_databases": [
+        {
+            "binding": "DB",
+            "database_name": "nodejsp",
+            "database_id": "4a03361c-2fb8-4b76-895b-0d33eef7c183"
+        }
+    ],
+    "assets": {
+        "directory": "./public",
+        "binding": "ASSETS"
     }
 }

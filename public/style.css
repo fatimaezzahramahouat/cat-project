@@ -1834,18 +1834,6 @@ div#pagination.pagination {
     max-width: 450px;
     box-shadow: 0 0 50px rgba(128, 0, 255, 0.3),
                 0 0 100px rgba(255, 0, 255, 0.2);
-    animation: modalSlideUp 0.3s ease;
-}
-
-@keyframes modalSlideUp {
-    from {
-        opacity: 0;
-        transform: translateY(50px) scale(0.95);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
 }
 
 .modal-header {
@@ -2731,7 +2719,7 @@ div#pagination.pagination {
     color: #e0e0e0;
     font-family: 'Share Tech Mono', monospace;
     font-size: 14px;
-    transition: all 0.3s ease;
+
 }
 
 #loginForm input:focus {
@@ -2752,7 +2740,7 @@ div#pagination.pagination {
     font-size: 14px;
     margin-bottom: 5px;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    
 }
 /* ============ REGISTER FORM BUTTON STYLES ============ */
 
@@ -2952,28 +2940,8 @@ div#pagination.pagination {
     padding: 20px 0;
 }
 
-/* Input fields */
-#registerForm input {
-    width: 100%;
-    padding: 14px 18px;
-    background: rgba(10, 15, 30, 0.9);
-    border: 1px solid #ff3366;
-    border-radius: 6px;
-    color: #ffffff;
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 15px;
-    transition: all 0.3s ease;
-}
 
-/* Input focus */
-#registerForm input:focus {
-    outline: none;
-    border-color: #ff6699;
-    box-shadow: 
-        0 0 15px rgba(255, 102, 153, 0.4),
-        inset 0 0 10px rgba(255, 102, 153, 0.1);
-    background: rgba(15, 20, 40, 0.95);
-}
+
 
 /* Placeholder */
 #registerForm input::placeholder {

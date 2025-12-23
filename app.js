@@ -201,13 +201,18 @@ export default {
       VALUES (?, ?, ?)
     `).bind(username, email, password_hash).run();
 
-    return Response.json({ message: "User registered successfully" });
+  return Response.json(
+  { message: "User registered successfully" },
+  { headers: corsHeaders }
+);
+
 
   } catch (err) {
-    return Response.json(
-      { message: "Username or email already exists" },
-      { status: 400 }
-    );
+   return Response.json(
+  { message: "All fields required" },
+  { status: 400, headers: corsHeaders }
+);
+
   }
 }
 

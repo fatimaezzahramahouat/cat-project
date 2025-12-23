@@ -782,6 +782,9 @@ function showSection(sectionId) {
     document.querySelectorAll('.cyber-section').forEach(section => {
         section.style.display = 'none';
         section.classList.remove('active');
+        
+        // Remove home-page class from all sections
+        section.classList.remove('home-page');
     });
     
     // Show the requested section
@@ -789,6 +792,11 @@ function showSection(sectionId) {
     if (targetSection) {
         targetSection.style.display = 'block';
         targetSection.classList.add('active');
+        
+        // Add home-page class if it's the home section
+        if (sectionId === 'home') {
+            targetSection.classList.add('home-page');
+        }
         
         // Update URL hash
         window.location.hash = sectionId;

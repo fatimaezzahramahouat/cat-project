@@ -3014,3 +3014,8 @@ div#pagination.pagination {
     background: linear-gradient(90deg, transparent, #ff3366, transparent);
     margin: 10px auto;
 } 
+/* Hide action buttons on home page */
+.home-page .actions,
+.home-page #addCatBtn {
+    display: none !important;
+}

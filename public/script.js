@@ -740,30 +740,167 @@ loginForm.addEventListener("submit", async (e) => {
 
 
 //dashboard modal
-// Update your addCatWithUser function to immediately update the dashboard:
+// ============ DASHBOARD FUNCTIONS ============
 
+// User Management System
+let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
+let userCats = JSON.parse(localStorage.getItem('userCats')) || {};
+
+// Update navigation based on login status
+function updateNavigation() {
+    const authLinks = document.querySelector('.auth-links');
+    const userLinks = document.getElementById('userLinks');
+    const userGreeting = document.getElementById('userGreeting');
+    
+    if (currentUser) {
+        // Hide register/login links
+        const registerLink = document.getElementById('openRegister').parentElement;
+        const loginLink = document.getElementById('openlogin').parentElement;
+        if (registerLink) registerLink.style.display = 'none';
+        if (loginLink) loginLink.style.display = 'none';
+        
+        // Show user links
+        if (userLinks) userLinks.style.display = 'block';
+        if (userGreeting) userGreeting.textContent = `Hi, ${currentUser.username}!`;
+    } else {
+        // Show auth links
+        const registerLink = document.getElementById('openRegister').parentElement;
+        const loginLink = document.getElementById('openlogin').parentElement;
+        if (registerLink) registerLink.style.display = 'list-item';
+        if (loginLink) loginLink.style.display = 'list-item';
+        
+        // Hide user links
+        if (userLinks) userLinks.style.display = 'none';
+    }
+}
+
+// Show Dashboard
+function showDashboard() {
+    if (!currentUser) {
+        alert('Please login to access dashboard!');
+        document.getElementById('openlogin').click();
+        return;
+    }
+    
+    // Hide all sections
+    document.querySelectorAll('.cyber-section').forEach(section => {
+        section.style.display = 'none';
+        section.classList.remove('active');
+    });
+    
+    // Show dashboard section
+    const dashboardSection = document.getElementById('dashboard');
+    if (dashboardSection) {
+        dashboardSection.style.display = 'block';
+        dashboardSection.classList.add('active');
+        
+        // Update dashboard content
+        updateDashboard();
+    }
+}
+
+// Update Dashboard Content
+function updateDashboard() {
+    if (!currentUser) return;
+    
+    // Update welcome message
+    const dashboardUsername = document.getElementById('dashboardUsername');
+    if (dashboardUsername) {
+        dashboardUsername.textContent = currentUser.username;
+    }
+    
+    // Update user stats
+    const userCatCount = document.getElementById('userCatCount');
+    if (userCatCount) {
+        const userCatsList = userCats[currentUser.id] || [];
+        userCatCount.textContent = userCatsList.length;
+    }
+    
+    // Load user's cats in dashboard gallery
+    loadUserCats();
+}
+
+// Load User's Cats in Dashboard
+function loadUserCats() {
+    const userCatsGallery = document.getElementById('userCatsGallery');
+    const noCatsMessage = document.getElementById('noCatsMessage');
+    
+    if (!userCatsGallery) return;
+    
+    const userCatsList = userCats[currentUser.id] || [];
+    
+    if (userCatsList.length === 0) {
+        if (noCatsMessage) noCatsMessage.style.display = 'block';
+        return;
+    }
+    
+    if (noCatsMessage) noCatsMessage.style.display = 'none';
+    userCatsGallery.innerHTML = '';
+    
+    userCatsList.forEach(cat => {
+        const catCard = document.createElement('div');
+        catCard.className = 'card';
+        catCard.innerHTML = `
+            ${cat.IMG ? `<img src="${cat.IMG}" alt="${cat.name}" loading="lazy" />` : '<div class="no-image">No Image</div>'}
+            <h3>${cat.name || 'Unnamed Cat'}</h3>
+            <p>${cat.description || 'No description available'}</p>
+            <span class="tag-badge">${cat.tag || 'No tag'}</span>
+            <div class="actions">
+                <button onclick="editUserCat('${cat.id}')" class="btn-edit">Edit</button>
+                <button onclick="deleteUserCat('${cat.id}')" class="btn-delete">Delete</button>
+            </div>
+        `;
+        userCatsGallery.appendChild(catCard);
+    });
+}
+
+// Modified login success handler
+function handleLoginSuccess(userData) {
+    currentUser = userData.user;
+    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+    
+    // Initialize user's cat storage if needed
+    if (!userCats[currentUser.id]) {
+        userCats[currentUser.id] = [];
+        localStorage.setItem('userCats', JSON.stringify(userCats));
+    }
+    
+    // Update navigation
+    updateNavigation();
+    
+    // Show dashboard automatically
+    showDashboard();
+    
+    // Close login modal
+    loginModal.style.display = 'none';
+    loginForm.reset();
+    
+    alert(`Welcome back, ${currentUser.username}!`);
+}
+
+// Modified addCat function to track user ownership
 function addCatWithUser() {
     const name = nameInput.value;
     const tag = tagInput.value;
     const description = descriptionInput.value;
-    const img = imgInput.value;
+    const IMG = imgInput.value;
     
     if (!name || !name.trim()) {
         showNotification('⚠️ Please enter a cat name', 'warning');
         return;
     }
     
-    if (!img || !img.trim()) {
-        showNotification('⚠️ Please enter an image URL', 'warning');
-        return;
-    }
-    
     const cat = {
-        name: name.trim(),
-        tag: tag.trim(),
-        description: description.trim(),
-        IMG: img.trim()
+        name: name,
+        tag: tag,
+        description: description,
+        IMG: IMG
     };
+    
+    if (currentUser) {
+        cat.addedBy = currentUser.id;
+        cat.addedDate = new Date().toISOString();
+    }
     
     showNotification('Adding cat...', 'info');
     
@@ -779,44 +916,24 @@ function addCatWithUser() {
     .then(data => {
         console.log("✅ Cat added:", data);
         
-        // Create complete cat object with ID
-        const newCat = {
-            ...cat,
-            id: data.id,
-            addedDate: new Date().toISOString()
-        };
-        
-        // Add to user's collection IMMEDIATELY
+        // Store in user's collection if logged in
         if (currentUser) {
+            const userCat = { ...data, id: data.id };
             if (!userCats[currentUser.id]) {
                 userCats[currentUser.id] = [];
             }
-            userCats[currentUser.id].push(newCat);
+            userCats[currentUser.id].push(userCat);
             localStorage.setItem('userCats', JSON.stringify(userCats));
+            
+            // Update dashboard if visible
+            if (window.location.hash === '#dashboard') {
+                updateDashboard();
+            }
         }
-        
-        // Also add to global catsData for home page
-        catsData.push(newCat);
         
         showNotification('✅ Cat added successfully!', 'success');
         closeModal();
-        
-        // IMMEDIATELY update the dashboard gallery
-        if (window.location.hash === '#dashboard') {
-            // Clear form and reload user's cats
-            nameInput.value = '';
-            tagInput.value = '';
-            descriptionInput.value = '';
-            imgInput.value = '';
-            
-            // Force reload user's cats
-            loadUserCats();
-        } else {
-            // If on home page, refresh home gallery
-            loadCats();
-        }
-        
-        // Update tags filter
+        loadCats();
         fetchTags();
     })
     .catch(err => {
@@ -825,123 +942,225 @@ function addCatWithUser() {
     });
 }
 
-// Also update the loadUserCats function to handle immediate updates better:
-
-function loadUserCats() {
-    const userCatsGallery = document.getElementById('userCatsGallery');
-    const noCatsMessage = document.getElementById('noCatsMessage');
-    
-    if (!userCatsGallery) return;
-    
-    // First check localStorage for instant display
-    const localCats = userCats[currentUser.id] || [];
-    
-    if (localCats.length > 0) {
-        displayUserCats(localCats);
+// Edit User Cat
+function editUserCat(catId) {
+    const cat = catsData.find(c => c.id == catId);
+    if (cat) {
+        editCat(catId); // Use your existing editCat function
     }
-    
-    // Then fetch from API for latest data
-    fetch(API_URL)
-        .then(res => {
-            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-            return res.json();
-        })
-        .then(allCats => {
-            // Filter cats by current user
-            const userCatIds = (userCats[currentUser.id] || []).map(cat => cat.id);
-            const userCatsList = allCats.filter(cat => userCatIds.includes(cat.id));
-            
-            // Update localStorage with fresh data
-            if (userCatsList.length > 0) {
-                userCats[currentUser.id] = userCatsList;
-                localStorage.setItem('userCats', JSON.stringify(userCats));
-                
-                // Update display with fresh data
-                displayUserCats(userCatsList);
-            }
-            
-            // Update stats
-            updateDashboardStats(userCatsList);
-        })
-        .catch(err => {
-            console.error('❌ Error loading user cats from API:', err);
-            // Keep displaying local cats if API fails
-            if (localCats.length === 0 && noCatsMessage) {
-                noCatsMessage.style.display = 'block';
-            }
-        });
 }
 
-// Make sure displayUserCats is called correctly:
-function displayUserCats(cats) {
+// Delete User Cat
+function deleteUserCat(catId) {
+    if (!confirm('Are you sure you want to delete this cat?')) return;
+    
+    showNotification('Deleting cat...', 'info');
+    
+    fetch(`${API_URL}/${catId}`, {
+        method: "DELETE"
+    })
+    .then(res => {
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        return res.json();
+    })
+    .then(data => {
+        // Remove from user's collection
+        if (currentUser && userCats[currentUser.id]) {
+            userCats[currentUser.id] = userCats[currentUser.id].filter(c => c.id != catId);
+            localStorage.setItem('userCats', JSON.stringify(userCats));
+            
+            // Update dashboard
+            if (window.location.hash === '#dashboard') {
+                updateDashboard();
+            }
+        }
+        
+        showNotification('✅ Cat deleted successfully!', 'success');
+        loadCats();
+        fetchTags();
+    })
+    .catch(err => {
+        console.error('❌ Error deleting cat:', err);
+        showNotification('❌ Failed to delete cat. Please try again.', 'error');
+    });
+}
+
+// Logout function
+function logoutUser() {
+    currentUser = null;
+    localStorage.removeItem('currentUser');
+    updateNavigation();
+    
+    // Show home section
+    document.querySelectorAll('.cyber-section').forEach(section => {
+        section.style.display = 'none';
+        section.classList.remove('active');
+    });
+    document.getElementById('home').style.display = 'block';
+    document.getElementById('home').classList.add('active');
+    
+    alert('Logged out successfully!');
+}
+
+// Navigation between sections (enhanced)
+document.querySelectorAll('.cyber-nav-link').forEach(link => {
+    link.addEventListener('click', function (e) {
+        e.preventDefault();
+        const targetId = this.getAttribute('href').substring(1);
+        
+        // Handle dashboard link
+        if (targetId === 'dashboard') {
+            showDashboard();
+            return;
+        }
+        
+        // Update active nav link
+        document.querySelectorAll('.cyber-nav-link').forEach(l => l.classList.remove('active'));
+        this.classList.add('active');
+        
+        // Show target section
+        document.querySelectorAll('.cyber-section').forEach(section => {
+            section.style.display = 'none';
+            section.classList.remove('active');
+        });
+        
+        const targetSection = document.getElementById(targetId);
+        if (targetSection) {
+            targetSection.style.display = 'block';
+            targetSection.classList.add('active');
+        }
+    });
+});
+
+// Initialize when page loads
+document.addEventListener('DOMContentLoaded', function () {
+    // Update navigation based on login status
+    updateNavigation();
+    
+    // Check for dashboard in URL
+    if (window.location.hash === '#dashboard') {
+        showDashboard();
+    }
+    
+    // Override existing addCat function
+    const originalAddCat = window.addCat;
+    window.addCat = function() {
+        addCatWithUser();
+    };
+    
+    // Override login form handler
+    loginForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        
+        const email = document.getElementById("loginEmail").value;
+        const password = document.getElementById("loginPassword").value;
+        
+        try {
+            const res = await fetch("https://cat-project.fatimaezzahramahouat.workers.dev/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password })
+            });
+            
+            const data = await res.json();
+            
+            if (res.ok) {
+                handleLoginSuccess(data);
+            } else {
+                alert(data.message || 'Login failed!');
+            }
+            
+        } catch (err) {
+            console.error("Login error:", err);
+            alert("Something went wrong.");
+        }
+    });
+    
+    // Add logout button event listener
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            logoutUser();
+        });
+    }
+    
+    // Add dashboard search functionality
+    const dashboardSearchInput = document.getElementById('dashboardSearchInput');
+    if (dashboardSearchInput) {
+        dashboardSearchInput.addEventListener('input', function() {
+            const query = this.value.toLowerCase();
+            loadFilteredUserCats(query);
+        });
+    }
+    
+    // Add user cat button
+    const addUserCatBtn = document.getElementById('addUserCatBtn');
+    if (addUserCatBtn) {
+        addUserCatBtn.addEventListener('click', function() {
+            if (!currentUser) {
+                alert('Please login to add cats!');
+                document.getElementById('openlogin').click();
+                return;
+            }
+            openAddModal();
+        });
+    }
+});
+
+// Load filtered user cats
+function loadFilteredUserCats(query = '') {
+    const userCatsList = userCats[currentUser.id] || [];
+    const filteredCats = query ? 
+        userCatsList.filter(cat => 
+            (cat.name && cat.name.toLowerCase().includes(query)) ||
+            (cat.tag && cat.tag.toLowerCase().includes(query)) ||
+            (cat.description && cat.description.toLowerCase().includes(query))
+        ) : userCatsList;
+    
+    displayFilteredUserCats(filteredCats);
+}
+
+// Display filtered user cats
+function displayFilteredUserCats(cats) {
     const userCatsGallery = document.getElementById('userCatsGallery');
     const noCatsMessage = document.getElementById('noCatsMessage');
     
     if (!userCatsGallery) return;
     
-    if (!cats || cats.length === 0) {
+    if (cats.length === 0) {
         if (noCatsMessage) noCatsMessage.style.display = 'block';
         userCatsGallery.innerHTML = '';
         return;
     }
     
     if (noCatsMessage) noCatsMessage.style.display = 'none';
-    
-    // Clear gallery first
     userCatsGallery.innerHTML = '';
     
-    // Apply filters
-    const dashboardSearchInput = document.getElementById('dashboardSearchInput');
-    let filteredCats = cats;
-    
-    if (dashboardSearchInput && dashboardSearchInput.value) {
-        const query = dashboardSearchInput.value.toLowerCase();
-        filteredCats = cats.filter(cat => 
-            (cat.name && cat.name.toLowerCase().includes(query)) ||
-            (cat.tag && cat.tag.toLowerCase().includes(query)) ||
-            (cat.description && cat.description.toLowerCase().includes(query))
-        );
-    }
-    
-    // Apply tag filter
-    const dashboardTagFilter = document.getElementById('dashboardTagFilter');
-    if (dashboardTagFilter && dashboardTagFilter.value) {
-        const selectedTag = dashboardTagFilter.value;
-        filteredCats = filteredCats.filter(cat => 
-            cat.tag && cat.tag.toLowerCase() === selectedTag.toLowerCase()
-        );
-    }
-    
-    // Display results
-    if (filteredCats.length === 0) {
-        userCatsGallery.innerHTML = '<div class="no-results">No cats match your search</div>';
-        return;
-    }
-    
-    // Update tag filter dropdown
-    updateDashboardTagFilter(cats);
-    
-    // Render all cats
-    filteredCats.forEach(cat => {
-        const catCard = createCatCard(cat);
+    cats.forEach(cat => {
+        const catCard = document.createElement('div');
+        catCard.className = 'card';
+        catCard.innerHTML = `
+            ${cat.IMG ? `<img src="${cat.IMG}" alt="${cat.name}" loading="lazy" />` : '<div class="no-image">No Image</div>'}
+            <h3>${cat.name || 'Unnamed Cat'}</h3>
+            <p>${cat.description || 'No description available'}</p>
+            <span class="tag-badge">${cat.tag || 'No tag'}</span>
+            <div class="actions">
+                <button onclick="editUserCat('${cat.id}')" class="btn-edit">Edit</button>
+                <button onclick="deleteUserCat('${cat.id}')" class="btn-delete">Delete</button>
+            </div>
+        `;
         userCatsGallery.appendChild(catCard);
     });
 }
 
-// Also add this function to ensure modal is properly closed:
-function closeModal() {
-    modal.style.display = "none";
-    editingId = null;
-    
-    // Reset form
-    nameInput.value = "";
-    tagInput.value = "";
-    descriptionInput.value = "";
-    imgInput.value = "";
-    
-    document.getElementById("addBtn").style.display = "inline-block";
-    document.getElementById("editBtn").style.display = "none";
-}
+// Make functions globally available
+window.showDashboard = showDashboard;
+window.logoutUser = logoutUser;
+window.editUserCat = editUserCat;
+window.deleteUserCat = deleteUserCat;
+
+
 
 
 

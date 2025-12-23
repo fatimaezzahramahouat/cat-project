@@ -668,7 +668,23 @@ window.onclick = (e) => {
       registerModal.style.display = "none";
     }
     };
-    
+
+document.getElementById("registerForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const res = await fetch("/register", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      username: username.value,
+      email: email.value,
+      password: password.value
+    })
+  });
+
+  const data = await res.json();
+  alert(data.message);
+});
 
 
 

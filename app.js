@@ -280,3 +280,62 @@ if (request.method === "POST" && new URL(request.url).pathname === "/login") {
   }
 }
 
+// Add this to your existing worker.js file
+
+// POST /contact - Save contact message
+if (url.pathname === '/contact' && request.method === 'POST') {
+  try {
+    const { name, email, subject, message } = await request.json();
+    
+    // Validate required fields
+    if (!name || !email || !subject || !message) {
+      return new Response(
+        JSON.stringify({ error: 'All fields are required' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    // Save to database
+    const result = await env.DB.prepare(
+      `INSERT INTO contact_messages (name, email, subject, message) 
+       VALUES (?, ?, ?, ?)`
+    ).bind(name, email, subject, message).run();
+    
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        message: 'Message sent successfully!',
+        id: result.lastInsertId 
+      }),
+      { 
+        status: 201, 
+        headers: { 'Content-Type': 'application/json' } 
+      }
+    );
+    
+  } catch (error) {
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+}
+
+// GET /contact-messages - Get all messages (optional, for admin)
+if (url.pathname === '/contact-messages' && request.method === 'GET') {
+  try {
+    const messages = await env.DB.prepare(
+      `SELECT * FROM contact_messages ORDER BY created_at DESC`
+    ).all();
+    
+    return new Response(
+      JSON.stringify(messages.results),
+      { headers: { 'Content-Type': 'application/json' } }
+    );
+  } catch (error) {
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+}

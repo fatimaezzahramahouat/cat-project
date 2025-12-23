@@ -1455,7 +1455,197 @@ window.logoutUser = logoutUser;
 
 
 
+// ============ CONTACT FORM HANDLING ============
 
+// Initialize contact form
+function setupContactForm() {
+  const contactForm = document.getElementById('contactForm');
+  if (!contactForm) return;
+
+  contactForm.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    // Get form data
+    const name = document.getElementById('contactName').value.trim();
+    const email = document.getElementById('contactEmail').value.trim();
+    const subject = document.getElementById('contactSubject').value.trim();
+    const message = document.getElementById('contactMessage').value.trim();
+    
+    // Basic validation
+    if (!name || !email || !subject || !message) {
+      showContactStatus('⚠️ Please fill in all fields', 'error');
+      return;
+    }
+    
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      showContactStatus('⚠️ Please enter a valid email address', 'error');
+      return;
+    }
+    
+    // Show loading state
+    const submitBtn = contactForm.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> SENDING...';
+    submitBtn.disabled = true;
+    
+    try {
+      // Send to API
+      const response = await fetch('/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name,
+          email,
+          subject,
+          message
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        // Success
+        showContactStatus('✅ Message sent successfully! Cattey will get back to you soon! 🐱', 'success');
+        contactForm.reset();
+        
+        // Optional: Send confirmation email (if you have email service)
+        sendEmailConfirmation(name, email, subject);
+      } else {
+        // Error from server
+        showContactStatus(`❌ ${data.error || 'Failed to send message'}`, 'error');
+      }
+    } catch (error) {
+      // Network error
+      console.error('Contact form error:', error);
+      showContactStatus('❌ Network error. Please try again.', 'error');
+    } finally {
+      // Reset button
+      submitBtn.innerHTML = originalText;
+      submitBtn.disabled = false;
+    }
+  });
+}
+
+// Show status message for contact form
+function showContactStatus(message, type = 'info') {
+  // Remove existing status
+  const existingStatus = document.querySelector('.form-status');
+  if (existingStatus) existingStatus.remove();
+  
+  // Create new status element
+  const statusDiv = document.createElement('div');
+  statusDiv.className = `form-status ${type}`;
+  statusDiv.innerHTML = `
+    <span>${message}</span>
+    <button onclick="this.parentElement.remove()" style="
+      background: none;
+      border: none;
+      color: inherit;
+      margin-left: 10px;
+      cursor: pointer;
+    ">×</button>
+  `;
+  
+  // Insert after form
+  const contactForm = document.getElementById('contactForm');
+  if (contactForm) {
+    contactForm.parentNode.insertBefore(statusDiv, contactForm.nextSibling);
+  }
+  
+  // Auto-remove after 10 seconds
+  setTimeout(() => {
+    if (statusDiv.parentElement) {
+      statusDiv.remove();
+    }
+  }, 10000);
+}
+
+// Optional: Send email confirmation
+function sendEmailConfirmation(name, email, subject) {
+  // This is a placeholder for actual email service integration
+  // You can use services like SendGrid, Mailgun, etc.
+  console.log(`Email would be sent to ${email} confirming message about "${subject}"`);
+  
+  // Example with fetch if you have an email endpoint:
+  /*
+  fetch('/send-email-confirmation', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, email, subject })
+  })
+  .then(res => res.json())
+  .then(data => console.log('Email confirmation sent:', data))
+  .catch(err => console.error('Email error:', err));
+  */
+}
+
+// Initialize contact form on DOM load
+document.addEventListener('DOMContentLoaded', function() {
+  setupContactForm();
+  
+  // Add contact link to navigation if not already there
+  const nav = document.querySelector('.cyber-nav');
+  if (nav && !document.querySelector('a[href="#contact"]')) {
+    const contactLink = document.createElement('a');
+    contactLink.href = '#contact';
+    contactLink.className = 'cyber-nav-link';
+    contactLink.innerHTML = '<i class="fas fa-envelope"></i> Contact';
+    nav.appendChild(contactLink);
+    
+    // Add click handler for the new link
+    contactLink.addEventListener('click', function(e) {
+      e.preventDefault();
+      showSection('contact');
+    });
+  }
+});
+
+// ============ ADMIN VIEW FOR MESSAGES (Optional) ============
+
+// If you want to view messages (add to dashboard)
+function showContactMessages() {
+  if (!currentUser) {
+    alert('Please login as admin');
+    return;
+  }
+  
+  fetch('/contact-messages')
+    .then(res => res.json())
+    .then(messages => {
+      const container = document.createElement('div');
+      container.className = 'messages-container';
+      container.innerHTML = `
+        <h3>Contact Messages (${messages.length})</h3>
+        ${messages.map(msg => `
+          <div class="message-card">
+            <h4>${escapeHTML(msg.subject)}</h4>
+            <p><strong>From:</strong> ${escapeHTML(msg.name)} (${escapeHTML(msg.email)})</p>
+            <p>${escapeHTML(msg.message)}</p>
+            <small>${new Date(msg.created_at).toLocaleString()}</small>
+          </div>
+        `).join('')}
+      `;
+      
+      // Show in a modal or dashboard section
+      const modal = document.createElement('div');
+      modal.className = 'modal';
+      modal.innerHTML = `
+        <div class="modal-content" style="max-width: 800px;">
+          <span class="close" onclick="this.parentElement.parentElement.remove()">&times;</span>
+          ${container.innerHTML}
+        </div>
+      `;
+      document.body.appendChild(modal);
+    })
+    .catch(err => {
+      console.error('Error loading messages:', err);
+      showNotification('Error loading messages', 'error');
+    });
+}
 
 // Close all modals
 function closeAllModals() {

@@ -2754,3 +2754,263 @@ div#pagination.pagination {
     text-transform: uppercase;
     letter-spacing: 1px;
 }
+/* ============ REGISTER FORM BUTTON STYLES ============ */
+
+/* Main button styling */
+#registerForm > button {
+    /* Layout */
+    display: block;
+    width: 100%;
+    padding: 15px 25px;
+    margin-top: 25px;
+    
+    /* Colors */
+    background: linear-gradient(135deg, #ff3366, #cc0055);
+    color: #ffffff;
+    border: 2px solid #ff3366;
+    
+    /* Typography */
+    font-family: 'Orbitron', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    
+    /* Effects */
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+}
+
+/* Glow effect */
+#registerForm > button {
+    box-shadow: 0 0 15px rgba(255, 51, 102, 0.4);
+}
+
+/* Hover effect */
+#registerForm > button:hover {
+    background: linear-gradient(135deg, #cc0055, #ff3366);
+    color: #ffffff;
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 
+        0 8px 25px rgba(255, 51, 102, 0.6),
+        0 0 30px rgba(255, 51, 102, 0.3);
+    border-color: #ff6699;
+    letter-spacing: 2px;
+}
+
+/* Active/Click effect */
+#registerForm > button:active {
+    transform: translateY(2px) scale(0.98);
+    box-shadow: 
+        0 3px 10px rgba(255, 51, 102, 0.4),
+        0 0 15px rgba(255, 51, 102, 0.2);
+    transition: all 0.1s ease;
+}
+
+/* Focus effect */
+#registerForm > button:focus {
+    outline: none;
+    box-shadow: 
+        0 0 0 3px rgba(255, 51, 102, 0.3),
+        0 0 20px rgba(255, 51, 102, 0.5);
+}
+
+/* Loading/disabled state */
+#registerForm > button:disabled {
+    background: linear-gradient(135deg, #666, #888);
+    border-color: #666;
+    color: #999;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: 0 0 10px rgba(102, 102, 102, 0.3);
+}
+
+/* Tech scan line effect */
+#registerForm > button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, 
+        transparent, 
+        rgba(255, 255, 255, 0.3), 
+        transparent
+    );
+    transition: left 0.7s ease;
+    z-index: -1;
+}
+
+#registerForm > button:hover::before {
+    left: 100%;
+}
+
+/* Pulsing animation */
+@keyframes registerPulse {
+    0% {
+        box-shadow: 0 0 15px rgba(255, 51, 102, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 25px rgba(255, 51, 102, 0.8);
+    }
+    100% {
+        box-shadow: 0 0 15px rgba(255, 51, 102, 0.4);
+    }
+}
+
+#registerForm > button {
+    animation: registerPulse 2s infinite;
+}
+
+/* Active submitting state */
+#registerForm > button.submitting {
+    animation: submitPulse 1s infinite;
+    background: linear-gradient(135deg, #ff9900, #ff6600);
+    border-color: #ff9900;
+}
+
+@keyframes submitPulse {
+    0% { 
+        transform: scale(1);
+        box-shadow: 0 0 20px rgba(255, 153, 0, 0.6);
+    }
+    50% { 
+        transform: scale(1.05);
+        box-shadow: 0 0 30px rgba(255, 153, 0, 0.9);
+    }
+    100% { 
+        transform: scale(1);
+        box-shadow: 0 0 20px rgba(255, 153, 0, 0.6);
+    }
+}
+
+/* Success state after registration */
+#registerForm > button.success {
+    background: linear-gradient(135deg, #00ff99, #00cc77);
+    border-color: #00ff99;
+    animation: successGlow 2s infinite;
+}
+
+@keyframes successGlow {
+    0% { box-shadow: 0 0 15px rgba(0, 255, 153, 0.4); }
+    50% { box-shadow: 0 0 25px rgba(0, 255, 153, 0.8); }
+    100% { box-shadow: 0 0 15px rgba(0, 255, 153, 0.4); }
+}
+
+/* Icon styling */
+#registerForm > button i {
+    margin-right: 10px;
+    font-size: 18px;
+    transition: transform 0.3s ease;
+}
+
+#registerForm > button:hover i {
+    transform: rotate(15deg) scale(1.2);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    #registerForm > button {
+        padding: 14px 20px;
+        font-size: 14px;
+        letter-spacing: 1px;
+    }
+    
+    #registerForm > button:hover {
+        transform: translateY(-2px) scale(1.01);
+        letter-spacing: 1.5px;
+    }
+}
+
+/* Dark mode variant */
+@media (prefers-color-scheme: dark) {
+    #registerForm > button {
+        background: linear-gradient(135deg, #cc0055, #990044);
+        border-color: #cc0055;
+    }
+    
+    #registerForm > button:hover {
+        background: linear-gradient(135deg, #990044, #cc0055);
+        box-shadow: 
+            0 8px 25px rgba(204, 0, 85, 0.6),
+            0 0 30px rgba(204, 0, 85, 0.3);
+    }
+}
+
+/* ============ REGISTER FORM STYLING ============ */
+
+/* Form container */
+#registerForm {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px 0;
+}
+
+/* Input fields */
+#registerForm input {
+    width: 100%;
+    padding: 14px 18px;
+    background: rgba(10, 15, 30, 0.9);
+    border: 1px solid #ff3366;
+    border-radius: 6px;
+    color: #ffffff;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 15px;
+    transition: all 0.3s ease;
+}
+
+/* Input focus */
+#registerForm input:focus {
+    outline: none;
+    border-color: #ff6699;
+    box-shadow: 
+        0 0 15px rgba(255, 102, 153, 0.4),
+        inset 0 0 10px rgba(255, 102, 153, 0.1);
+    background: rgba(15, 20, 40, 0.95);
+}
+
+/* Placeholder */
+#registerForm input::placeholder {
+    color: #ff99bb;
+    font-family: 'Share Tech Mono', monospace;
+    opacity: 0.7;
+}
+
+/* Labels */
+#registerForm label {
+    color: #ff6699;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 14px;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    display: block;
+}
+
+/* Form title styling */
+#registerModal h2 {
+    color: #ff3366;
+    text-align: center;
+    margin-bottom: 30px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 24px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-shadow: 0 0 10px rgba(255, 51, 102, 0.5);
+    position: relative;
+}
+
+#registerModal h2::after {
+    content: '';
+    display: block;
+    width: 60px;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, #ff3366, transparent);
+    margin: 10px auto;
+}

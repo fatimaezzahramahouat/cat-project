@@ -20,6 +20,11 @@ export default {
        if (request.method === "POST" && new URL(request.url).pathname === "/register") {
   return register(request, env, corsHeaders);
 }
+//LOGIN ROUTE
+if (request.method === "POST" && new URL(request.url).pathname === "/login") {
+  return login(request, env, corsHeaders);
+}
+
 
         // ========== API ROUTES ==========
 
@@ -217,3 +222,30 @@ export default {
   }
 
 
+//LOGIN
+    async function login(request, env ,corsHeaders) {
+    const body = await request.json();
+    const { username, password } = body;
+    if (!username || !password) {
+      return Response.json({ message: "All fields required" }, { status: 400 });
+    }
+    // 🔐 hash password login
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const password_hash = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+    const { results } = await env.DB.prepare(`
+        SELECT * FROM users WHERE username = ? AND password_hash = ?
+    `).bind(username, password_hash).all();
+    if (results.length === 0) {
+      return Response.json(
+        { message: "Invalid username or password" },
+        { status: 401 , headers: corsHeaders }
+      );
+    }
+    return Response.json(
+      { message: "Login successful" },
+      { headers: corsHeaders }
+    );
+  }

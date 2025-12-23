@@ -656,8 +656,7 @@ document.querySelector('.contact-form').addEventListener('submit', function (e) 
 
 
 
-//REGISTER MODAL hada gher dyal html
-// فتح وغلق modal
+//REGISTER
 const registerModal = document.getElementById("registerModal");
 const openRegisterBtn = document.getElementById("openRegister");
 const closeRegisterBtn = document.getElementById("closeRegister");
@@ -670,7 +669,7 @@ window.onclick = (e) => { if (e.target === registerModal) registerModal.style.di
 const form = document.getElementById("registerForm");
 
 form.addEventListener("submit", async (e) => {
-  e.preventDefault(); // منع reload الصفحة
+  e.preventDefault(); 
 
   const username = document.getElementById("username").value;
   const email = document.getElementById("email").value;
@@ -698,8 +697,40 @@ form.addEventListener("submit", async (e) => {
 });
 
 
+//login
+
+// Login modal open/close
+const loginModal = document.getElementById("loginModal");
+const openLoginBtn = document.getElementById("openlogin");
+const closeLoginBtn = document.getElementById("closelogin");
+openLoginBtn.onclick = () => loginModal.style.display = "flex";
+closeLoginBtn.onclick = () => loginModal.style.display = "none";
+window.onclick = (e) => { if (e.target === loginModal) loginModal.style.display = "none"; };
+// Handle login form submission
+const loginForm = document.getElementById("loginForm");
+loginForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+    const email = document.getElementById("loginEmail").value;
+    const password = document.getElementById("loginPassword").value;
+    try {
+        const res = await fetch("https://cat-project.fatimaezzahramahouat.workers.dev/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        alert(data.message);
+        if (res.ok) {
+            loginModal.style.display = "none"; // close modal
+            loginForm.reset(); // clear form
+        }
+    } catch (err) {
 
 
+        console.error("Login error:", err);
+        alert("Something went wrong.");
+    }
+});
 
 
 

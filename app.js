@@ -16,10 +16,10 @@ export default {
             return new Response(null, { headers: corsHeaders });
         }
         
-
-   if (request.method === "POST" && new URL(request.url).pathname === "/register") {
-      return register(request, env);
-    }
+       //REGISTER ROUTE
+        if (request.method === "POST" && new URL(request.url).pathname === "/register") {
+        return register(request, env);
+        }
         // ========== API ROUTES ==========
 
         // GET /cats - Get all cats
@@ -161,10 +161,11 @@ export default {
                 );
             }
         }
+//REGISTER
 
-        ///AUTH kankhdmo b web crypto api hit worker 
+///AUTH kankhdmo b web crypto api hit worker 
 
-    async function register(request, env) {
+  async function register(request, env) {
   const body = await request.json();
   const { username, email, password } = body;
 
@@ -172,7 +173,7 @@ export default {
     return Response.json({ message: "All fields required" }, { status: 400 });
   }
 
-  // 🔐 hash password
+  // 🔐 hash password regsiter 
   const encoder = new TextEncoder();
   const data = encoder.encode(password);
   const hashBuffer = await crypto.subtle.digest("SHA-256", data);
@@ -196,7 +197,9 @@ export default {
 }
 
 
-  
+//LOGIN
+// ... You can implement login similarly, verifying the hashed password
+
 
 
 

@@ -2181,27 +2181,6 @@ div#pagination.pagination {
     font-size: 1.1em;
 }
 
-/* Modal Close Button */
-.modal-close {
-    background: rgba(255, 0, 0, 0.2);
-    border: 1px solid var(--neon-red);
-    color: var(--neon-red);
-    font-size: 1.2em;
-    cursor: pointer;
-    padding: 8px 12px;
-    border-radius: 6px;
-    transition: all 0.3s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.modal-close:hover {
-    background: rgba(255, 0, 0, 0.4);
-    box-shadow: 0 0 15px var(--neon-red);
-    transform: rotate(90deg);
-}
-
 .modal-content {
   position: relative;
 }

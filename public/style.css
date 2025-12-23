@@ -513,7 +513,7 @@ body.cyber-theme {
     box-shadow: 0 0 15px rgba(0, 255, 0, 0.2);
 }
 
-/* ===== MODALS ===== */
+/* ===== AUTH MODALS (NO ANIMATIONS) ===== */
 .cyber-modal {
     display: none;
     position: fixed;
@@ -533,6 +533,7 @@ body.cyber-theme {
     width: 90%;
     max-width: 400px;
     box-shadow: 0 0 40px rgba(0, 255, 0, 0.3);
+    animation: none !important;
 }
 
 .modal-header {
@@ -550,6 +551,7 @@ body.cyber-theme {
     display: flex;
     align-items: center;
     gap: 10px;
+    font-size: 1.2rem;
 }
 
 .modal-close {
@@ -576,6 +578,124 @@ body.cyber-theme {
 }
 
 .auth-link a {
+    color: var(--cyber-accent);
+    text-decoration: none;
+}
+
+/* Simple Auth Form Styles (No Animations) */
+.auth-form input {
+    width: 100%;
+    padding: 12px 15px;
+    background: rgba(0, 0, 0, 0.7);
+    border: 1px solid var(--cyber-secondary);
+    color: var(--cyber-primary);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.9rem;
+    margin-bottom: 15px;
+}
+
+.auth-form input:focus {
+    outline: none;
+    border-color: var(--cyber-primary);
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
+}
+
+.auth-form button {
+    width: 100%;
+    padding: 12px;
+    background: transparent;
+    border: 1px solid var(--cyber-primary);
+    color: var(--cyber-primary);
+    font-family: 'Orbitron', sans-serif;
+    text-transform: uppercase;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: all 0.3s ease;
+}
+
+.auth-form button:hover {
+    background: rgba(0, 255, 0, 0.1);
+}
+
+/* Register Modal Specific */
+.register-form .form-group {
+    position: relative;
+}
+
+.register-form .password-strength {
+    margin-top: 5px;
+}
+
+.strength-meter {
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    margin-bottom: 8px;
+    overflow: hidden;
+}
+
+.strength-bar {
+    height: 100%;
+    width: 0%;
+    background: var(--cyber-danger);
+    transition: width 0.3s ease;
+}
+
+.strength-bar.weak {
+    width: 33%;
+    background: var(--cyber-danger);
+}
+
+.strength-bar.medium {
+    width: 66%;
+    background: var(--cyber-warning);
+}
+
+.strength-bar.strong {
+    width: 100%;
+    background: var(--cyber-success);
+}
+
+.password-requirements {
+    margin-top: 10px;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    border-left: 2px solid var(--cyber-secondary);
+}
+
+.password-requirements ul {
+    margin: 5px 0;
+    padding-left: 20px;
+}
+
+.password-requirements li {
+    color: var(--cyber-secondary);
+    font-size: 0.8rem;
+    margin: 3px 0;
+}
+
+.terms-group {
+    margin-top: 15px;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    border: 1px solid var(--cyber-secondary);
+}
+
+.checkbox-container {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    color: var(--cyber-secondary);
+    font-size: 0.85rem;
+}
+
+.checkbox-container input {
+    margin-right: 8px;
+}
+
+.terms-link {
     color: var(--cyber-accent);
     text-decoration: none;
 }
@@ -1824,361 +1944,59 @@ div#pagination.pagination {
 #refreshTagsBtn:hover {
     background: #45a049;
 }
-/* Register Modal Specific Styles */
-.cyber-modal-content {
-    background: var(--card-bg);
-    border: 2px solid var(--neon-purple);
-    border-radius: 12px;
-    padding: 30px;
-    width: 100%;
-    max-width: 450px;
-    box-shadow: 0 0 50px rgba(128, 0, 255, 0.3),
-                0 0 100px rgba(255, 0, 255, 0.2);
-    animation: modalSlideUp 0.3s ease;
+
+/* Auth Modal Styles - Simple and Clean */
+.auth-modal .modal-terminal {
+    animation: none !important;
 }
 
-@keyframes modalSlideUp {
-    from {
-        opacity: 0;
-        transform: translateY(50px) scale(0.95);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
+.auth-form {
+    animation: none !important;
 }
 
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 25px;
-    padding-bottom: 15px;
-    border-bottom: 1px solid var(--neon-purple);
+.auth-form input {
+    animation: none !important;
+    transition: none !important;
 }
 
-.modal-header h2 {
-    color: var(--neon-pink);
-    font-family: 'Orbitron', sans-serif;
-    font-size: 1.6em;
-    margin: 0;
-    display: flex;
-    align-items: center;
-    gap: 12px;
+.auth-form button {
+    animation: none !important;
+    transition: border-color 0.2s, background-color 0.2s;
 }
 
-/* Form Groups */
-.form-group {
-    margin-bottom: 25px;
-}
-
-.input-icon {
-    position: relative;
-    display: flex;
-    align-items: center;
-}
-
-.input-icon i {
-    position: absolute;
-    left: 15px;
-    color: var(--neon-cyan);
-    font-size: 1.2em;
-    z-index: 1;
-}
-
-.cyber-input {
-    width: 100%;
-    padding: 15px 15px 15px 50px;
-    background: rgba(0, 0, 0, 0.4);
-    border: 2px solid var(--neon-purple);
-    border-radius: 8px;
-    color: var(--text-primary);
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 15px;
-    transition: all 0.3s;
-    letter-spacing: 0.5px;
-}
-
-.cyber-input:focus {
-    outline: none;
-    border-color: var(--neon-cyan);
-    box-shadow: 0 0 20px var(--neon-cyan);
-    transform: translateY(-2px);
-}
-
-.input-hint {
-    display: block;
-    margin-top: 8px;
-    color: var(--text-secondary);
+/* Error Messages - Simple */
+.error-message {
+    color: var(--cyber-danger);
     font-size: 0.85em;
-    font-style: italic;
-    font-family: 'Share Tech Mono', monospace;
+    margin-top: 5px;
+    display: none;
+    animation: none;
 }
 
-/* Password Strength Meter */
-.password-strength {
-    margin-top: 10px;
-}
-
-.strength-meter {
-    height: 6px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 3px;
-    margin-bottom: 10px;
-    overflow: hidden;
-}
-
-.strength-bar {
-    height: 100%;
-    width: 0%;
-    background: var(--neon-red);
-    border-radius: 3px;
-    transition: all 0.3s ease;
-}
-
-.strength-bar.weak {
-    width: 33%;
-    background: var(--neon-red);
-}
-
-.strength-bar.medium {
-    width: 66%;
-    background: var(--neon-yellow);
-}
-
-.strength-bar.strong {
-    width: 100%;
-    background: var(--neon-green);
-}
-
+/* Password Requirements - Simple */
 .password-requirements {
-    margin-top: 15px;
-    padding: 12px;
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 6px;
-    border-left: 3px solid var(--neon-blue);
-}
-
-.password-requirements p {
-    color: var(--neon-cyan);
-    font-size: 0.9em;
-    margin-bottom: 8px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.password-requirements ul {
-    margin: 0;
-    padding-left: 0;
-    list-style: none;
+    animation: none;
 }
 
 .password-requirements li {
-    color: var(--text-secondary);
-    font-size: 0.85em;
-    margin: 5px 0;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: all 0.3s;
+    animation: none;
+    transition: color 0.2s;
 }
 
-.password-requirements li i {
-    font-size: 0.7em;
-    transition: all 0.3s;
-}
-
-.password-requirements li.valid {
-    color: var(--neon-green);
-}
-
-.password-requirements li.valid i {
-    color: var(--neon-green);
-}
-
-.password-requirements li.invalid {
-    color: var(--neon-red);
-}
-
-.password-requirements li.invalid i {
-    color: var(--neon-red);
-}
-
-/* Terms Checkbox */
-.terms-group {
-    margin-top: 20px;
-    padding: 15px;
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 8px;
-    border: 1px solid var(--neon-blue);
-}
-
-.checkbox-container {
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-    color: var(--text-primary);
-    font-size: 0.95em;
-    user-select: none;
-}
-
+/* Checkbox - Simple */
 .checkbox-container input {
-    display: none;
+    animation: none;
 }
 
 .checkmark {
-    width: 20px;
-    height: 20px;
-    border: 2px solid var(--neon-purple);
-    border-radius: 4px;
-    margin-right: 12px;
-    position: relative;
-    transition: all 0.3s;
-    flex-shrink: 0;
+    animation: none;
+    transition: border-color 0.2s, background-color 0.2s;
 }
 
-.checkbox-container input:checked ~ .checkmark {
-    background: var(--neon-cyan);
-    border-color: var(--neon-cyan);
-}
-
-.checkbox-container input:checked ~ .checkmark::after {
-    content: '';
-    position: absolute;
-    left: 6px;
-    top: 2px;
-    width: 5px;
-    height: 10px;
-    border: solid black;
-    border-width: 0 2px 2px 0;
-    transform: rotate(45deg);
-}
-
-.terms-link {
-    color: var(--neon-pink);
-    text-decoration: none;
-    transition: all 0.3s;
-}
-
-.terms-link:hover {
-    color: var(--neon-cyan);
-    text-shadow: 0 0 10px var(--neon-cyan);
-}
-
-/* Error Messages */
-.error-message {
-    color: var(--neon-red);
-    font-size: 0.85em;
-    margin-top: 5px;
-    padding-left: 5px;
-    display: none;
-    font-family: 'Share Tech Mono', monospace;
-    animation: shake 0.3s ease;
-}
-
-@keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    20%, 60% { transform: translateX(-5px); }
-    40%, 80% { transform: translateX(5px); }
-}
-
-/* Buttons */
-.full-width {
-    width: 100%;
-    margin-top: 20px;
-}
-
-.cyber-btn.primary {
-    background: linear-gradient(45deg, var(--neon-pink), var(--neon-purple));
-    border: 2px solid var(--neon-pink);
-    color: white;
-    padding: 16px 25px;
-    font-family: 'Orbitron', sans-serif;
-    font-weight: bold;
-    font-size: 15px;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    cursor: pointer;
-    transition: all 0.3s;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-}
-
-.cyber-btn.primary:hover {
-    box-shadow: 0 0 30px var(--neon-pink);
-    transform: translateY(-3px);
-}
-
-.cyber-btn.primary:active {
-    transform: translateY(-1px);
-}
-
-/* Auth Switch */
-.auth-switch {
-    text-align: center;
-    margin-top: 25px;
-    padding-top: 20px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    color: var(--text-secondary);
-    font-size: 0.95em;
-}
-
-.cyber-link {
-    color: var(--neon-cyan);
-    text-decoration: none;
-    font-weight: bold;
-    transition: all 0.3s;
-    margin-left: 8px;
-}
-
-.cyber-link:hover {
-    color: var(--neon-pink);
-    text-shadow: 0 0 15px var(--neon-pink);
-}
-
-/* Success Modal */
-.cyber-modal-content.success {
-    text-align: center;
-    border-color: var(--neon-green);
-    box-shadow: 0 0 60px rgba(0, 255, 0, 0.4);
-}
-
-.success-icon {
-    font-size: 5em;
-    color: var(--neon-green);
-    margin-bottom: 20px;
-    animation: successPulse 1.5s infinite;
-}
-
-@keyframes successPulse {
-    0% { 
-        transform: scale(1); 
-        text-shadow: 0 0 20px var(--neon-green);
-    }
-    50% { 
-        transform: scale(1.1); 
-        text-shadow: 0 0 40px var(--neon-green);
-    }
-    100% { 
-        transform: scale(1); 
-        text-shadow: 0 0 20px var(--neon-green);
-    }
-}
-
-.cyber-modal-content.success h2 {
-    color: var(--neon-green);
-    margin-bottom: 15px;
-    font-size: 1.8em;
-}
-
-.cyber-modal-content.success p {
-    color: var(--text-primary);
-    margin-bottom: 15px;
-    font-size: 1.1em;
+/* Strength Bar - Simple */
+.strength-bar {
+    animation: none;
+    transition: width 0.3s ease, background-color 0.3s ease;
 }
 
 .modal-content {
@@ -2193,3 +2011,12 @@ div#pagination.pagination {
   font-size: 22px;
 }
 
+/* Remove all animations from auth modals */
+.auth-modal * {
+    animation: none !important;
+}
+
+.auth-modal input:focus,
+.auth-modal button:focus {
+    animation: none !important;
+}

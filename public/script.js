@@ -659,7 +659,8 @@ document.querySelector('.contact-form').addEventListener('submit', function (e) 
 //REGISTER MODAL
 const registerModal = document.getElementById("registerModal");
 const openRegisterBtn = document.getElementById("openRegister");
-const closeRegisterBtn = document.getElementById("closeRegister");
+const closeRegisterBtn = document.querySelector(".close");
+
 
 openRegisterBtn.onclick = () => registerModal.style.display = "flex";
 closeRegisterBtn.onclick = () => registerModal.style.display = "none";  

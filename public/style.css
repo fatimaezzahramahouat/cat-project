@@ -2606,7 +2606,7 @@ div#pagination.pagination {
     /* Colors */
     background: linear-gradient(135deg, #00ff99, #00cc77);
     color: #000000;
-    border: 2px solid #00ff99;
+    border: 2px solid #ff06c1;
     
     /* Typography */
     font-family: 'Orbitron', sans-serif;

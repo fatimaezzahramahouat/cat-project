@@ -2989,3 +2989,8 @@ div#pagination.pagination {
     color: var(--cyber-black);
     font-weight: bold;
 }
+/* Hide action buttons on home page */
+.home-page .actions,
+.home-page #addCatBtn {
+    display: none !important;
+}

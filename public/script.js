@@ -703,14 +703,16 @@ form.addEventListener("submit", async (e) => {
 const loginModal = document.getElementById("loginModal");
 const openLoginBtn = document.getElementById("openlogin");
 const closeLoginBtn = document.getElementById("closeLogin");
+
 openLoginBtn.onclick = () => loginModal.style.display = "flex";
 closeLoginBtn.onclick = () => loginModal.style.display = "none";
 window.onclick = (e) => { if (e.target === loginModal) loginModal.style.display = "none"; };
 
-// Login form
+// Handle login form
 const loginForm = document.getElementById("loginForm");
 loginForm.addEventListener("submit", async (e) => {
   e.preventDefault();
+
   const email = document.getElementById("loginEmail").value;
   const password = document.getElementById("loginPassword").value;
 
@@ -720,44 +722,22 @@ loginForm.addEventListener("submit", async (e) => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password })
     });
+
     const data = await res.json();
+    alert(data.message);
+
     if (res.ok) {
-      localStorage.setItem("token", data.token); // store token
       loginModal.style.display = "none";
       loginForm.reset();
-      showDashboard();
-    } else {
-      alert(data.message);
+      console.log("Logged in user:", data.user);
     }
+
   } catch (err) {
     console.error("Login error:", err);
     alert("Something went wrong.");
   }
 });
 
-// Show dashboard
-function showDashboard() {
-  document.getElementById("dashboard").style.display = "block";
-  loadCats();
-}
-
-// Load cats from backend
-async function loadCats() {
-  const res = await fetch("https://cat-project.fatimaezzahramahouat.workers.dev/cats");
-  const cats = await res.json();
-  const gallery = document.getElementById("catGallery");
-  gallery.innerHTML = cats.map(cat => `
-    <div class="cat-card">
-      <img src="${cat.IMG || 'https://via.placeholder.com/150'}" alt="${cat.name}">
-      <h3>${cat.name}</h3>
-      <p>${cat.tag || ''}</p>
-    </div>
-  `).join('');
-  document.getElementById("catCount").textContent = cats.length;
-}
-
-// Auto login if token exists
-if (localStorage.getItem("token")) showDashboard();
 
 
 

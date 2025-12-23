@@ -17,10 +17,10 @@ export default {
         }
         
        //REGISTER ROUTE
-        if (request.method === "POST" && new URL(request.url).pathname === "/register") {
-      return register(request, env, corsHeaders);
+       if (request.method === "POST" && new URL(request.url).pathname === "/register") {
+  return register(request, env, corsHeaders);
+}
 
-        }
         // ========== API ROUTES ==========
 
         // GET /cats - Get all cats
@@ -215,4 +215,5 @@ export default {
 }
 
   }
+
 

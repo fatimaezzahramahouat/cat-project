@@ -3,7 +3,7 @@
 const API_URL = "/cats";  // Changed from http://localhost:5000/cats
 const API_BASE = ""; // Same origin
 
-// ============ DOM ELEMENTS ============z
+// ============ DOM ELEMENTS ============
 const gallery = document.getElementById("catGallery");
 const modal = document.getElementById("catModal");
 let editingId = null;

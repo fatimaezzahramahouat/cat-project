@@ -741,13 +741,15 @@ loginForm.addEventListener("submit", async (e) => {
 
 //dashboard modal
 
-// ============ COMPLETE DASHBOARD SYSTEM ============
+// ============ COMPLETE FIXED DASHBOARD SYSTEM ============
 
 // User Management
 let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
 let userCats = JSON.parse(localStorage.getItem('userCats')) || {};
 
-// 1. Update Navigation
+// ============ NAVIGATION SYSTEM ============
+
+// 1. Update Navigation Display
 function updateNavigation() {
     const userLinks = document.getElementById('userLinks');
     const userGreeting = document.getElementById('userGreeting');
@@ -772,7 +774,64 @@ function updateNavigation() {
     }
 }
 
-// 2. Show Dashboard
+// 2. Show Any Section
+function showSection(sectionId) {
+    console.log("Showing section:", sectionId);
+    
+    // Hide all sections
+    document.querySelectorAll('.cyber-section').forEach(section => {
+        section.style.display = 'none';
+        section.classList.remove('active');
+    });
+    
+    // Show the requested section
+    const targetSection = document.getElementById(sectionId);
+    if (targetSection) {
+        targetSection.style.display = 'block';
+        targetSection.classList.add('active');
+        
+        // Update URL hash
+        window.location.hash = sectionId;
+        
+        // Update active nav link
+        updateActiveNavLink(sectionId);
+    }
+}
+
+// 3. Update Active Nav Link
+function updateActiveNavLink(activeId) {
+    // Remove active class from all links
+    document.querySelectorAll('.cyber-nav-link').forEach(link => {
+        link.classList.remove('active');
+    });
+    
+    // Add active class to current link
+    const activeLink = document.querySelector(`.cyber-nav-link[href="#${activeId}"]`);
+    if (activeLink) {
+        activeLink.classList.add('active');
+    }
+}
+
+// 4. Setup Navigation
+function setupNavigation() {
+    // Handle all nav links
+    document.querySelectorAll('.cyber-nav-link[href^="#"]').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('href').substring(1);
+            
+            if (targetId === 'dashboard') {
+                showDashboard();
+            } else {
+                showSection(targetId);
+            }
+        });
+    });
+}
+
+// ============ DASHBOARD SYSTEM ============
+
+// 5. Show Dashboard
 function showDashboard() {
     if (!currentUser) {
         alert('Please login to access dashboard!');
@@ -780,20 +839,11 @@ function showDashboard() {
         return;
     }
     
-    // Hide all sections
-    document.querySelectorAll('.cyber-section').forEach(section => {
-        section.style.display = 'none';
-    });
-    
-    // Show dashboard
-    const dashboard = document.getElementById('dashboard');
-    if (dashboard) {
-        dashboard.style.display = 'block';
-        updateDashboard();
-    }
+    showSection('dashboard');
+    updateDashboard();
 }
 
-// 3. Update Dashboard
+// 6. Update Dashboard Content
 function updateDashboard() {
     if (!currentUser) return;
     
@@ -810,7 +860,7 @@ function updateDashboard() {
     setupDashboardControls();
 }
 
-// 4. Setup Dashboard Controls
+// 7. Setup Dashboard Controls
 function setupDashboardControls() {
     // Search input
     const dashboardSearch = document.getElementById('dashboardSearchInput');
@@ -837,7 +887,7 @@ function setupDashboardControls() {
     }
 }
 
-// 5. Load User Cats
+// 8. Load User Cats
 function loadUserCats() {
     const userCatsGallery = document.getElementById('userCatsGallery');
     const noCatsMessage = document.getElementById('noCatsMessage');
@@ -864,7 +914,7 @@ function loadUserCats() {
     fetchFreshCats();
 }
 
-// 6. Display User Cats
+// 9. Display User Cats
 function displayUserCats(cats) {
     const userCatsGallery = document.getElementById('userCatsGallery');
     if (!userCatsGallery) return;
@@ -880,11 +930,11 @@ function displayUserCats(cats) {
     updateDashboardTagFilter(cats);
 }
 
-// 7. Create Cat Card
+// 10. Create Cat Card
 function createCatCard(cat) {
     const div = document.createElement("div");
     div.className = "card dashboard-card";
-    div.dataset.catId = cat.id; // Store ID for easy access
+    div.dataset.catId = cat.id;
     div.innerHTML = `
         ${cat.IMG ? `<img src="${cat.IMG}" alt="${cat.name}" loading="lazy" />` : '<div class="no-image">No Image</div>'}
         <h3>${escapeHTML(cat.name) || 'Unnamed Cat'}</h3>
@@ -911,7 +961,7 @@ function createCatCard(cat) {
     return div;
 }
 
-// 8. Filter Dashboard Cats
+// 11. Filter Dashboard Cats
 function filterDashboardCats() {
     const userCatsList = userCats[currentUser.id] || [];
     const searchInput = document.getElementById('dashboardSearchInput');
@@ -941,7 +991,7 @@ function filterDashboardCats() {
     displayUserCats(filteredCats);
 }
 
-// 9. Update Dashboard Tag Filter
+// 12. Update Dashboard Tag Filter
 function updateDashboardTagFilter(cats) {
     const tagFilter = document.getElementById('dashboardTagFilter');
     if (!tagFilter) return;
@@ -966,7 +1016,7 @@ function updateDashboardTagFilter(cats) {
     }
 }
 
-// 10. Update Dashboard Stats
+// 13. Update Dashboard Stats
 function updateDashboardStats() {
     const userCatsList = userCats[currentUser.id] || [];
     const userCatCount = document.getElementById('userCatCount');
@@ -975,7 +1025,7 @@ function updateDashboardStats() {
     }
 }
 
-// 11. Edit User Cat (NO REFRESH NEEDED)
+// 14. Edit User Cat (NO REFRESH NEEDED)
 function editUserCat(catId) {
     console.log("Editing cat:", catId);
     
@@ -1009,7 +1059,7 @@ function editUserCat(catId) {
     modal.style.display = 'flex';
 }
 
-// 12. Delete User Cat (NO REFRESH NEEDED)
+// 15. Delete User Cat (NO REFRESH NEEDED)
 function deleteUserCat(catId) {
     if (!confirm('Are you sure you want to delete this cat?')) return;
     
@@ -1055,7 +1105,7 @@ function deleteUserCat(catId) {
     });
 }
 
-// 13. Update User Cat (NO REFRESH NEEDED)
+// 16. Update User Cat (NO REFRESH NEEDED)
 function updateUserCat() {
     if (!editingId) {
         alert('No cat selected!');
@@ -1142,7 +1192,7 @@ function updateUserCat() {
     });
 }
 
-// 14. Add Cat to Dashboard (NO REFRESH NEEDED)
+// 17. Add Cat to Dashboard (NO REFRESH NEEDED)
 function addCatDashboard() {
     const name = document.getElementById('name').value;
     const tag = document.getElementById('tag').value;
@@ -1183,7 +1233,7 @@ function addCatDashboard() {
         const userCatsGallery = document.getElementById('userCatsGallery');
         if (userCatsGallery) {
             const card = createCatCard(newCat);
-            userCatsGallery.prepend(card); // Add at beginning
+            userCatsGallery.prepend(card);
             
             // Animation
             card.style.opacity = '0';
@@ -1221,7 +1271,7 @@ function addCatDashboard() {
     });
 }
 
-// 15. Fetch Fresh Cats from API
+// 18. Fetch Fresh Cats from API
 function fetchFreshCats() {
     fetch(API_URL)
         .then(res => res.json())
@@ -1241,7 +1291,7 @@ function fetchFreshCats() {
         .catch(err => console.log('Using cached cats'));
 }
 
-// 16. Handle Login Success
+// 19. Handle Login Success
 function handleLoginSuccess(userData) {
     currentUser = userData.user;
     localStorage.setItem('currentUser', JSON.stringify(currentUser));
@@ -1259,16 +1309,15 @@ function handleLoginSuccess(userData) {
     showNotification(`Welcome ${currentUser.username}!`, 'success');
 }
 
-// 17. Logout
+// 20. Logout
 function logoutUser() {
     currentUser = null;
     localStorage.removeItem('currentUser');
     
     updateNavigation();
     
-    // Show home
-    document.querySelectorAll('.cyber-section').forEach(s => s.style.display = 'none');
-    document.getElementById('home').style.display = 'block';
+    // Show home section
+    showSection('home');
     
     showNotification('Logged out!', 'info');
 }
@@ -1276,8 +1325,21 @@ function logoutUser() {
 // ============ INITIALIZATION ============
 
 document.addEventListener('DOMContentLoaded', function() {
+    console.log("Initializing Cat Gallery with Dashboard...");
+    
+    // Test API connection immediately
+    testAPI();
+    
+    // Load initial data
+    loadCats();
+    fetchTags();
+    setupEventListeners();
+    
     // Update nav
     updateNavigation();
+    
+    // Setup navigation
+    setupNavigation();
     
     // Setup dashboard link
     document.querySelectorAll('a[href="#dashboard"]').forEach(link => {
@@ -1312,35 +1374,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 addCatDashboard();
             } else {
                 // In home, use original function
-                const cat = {
-                    name: document.getElementById('name').value,
-                    tag: document.getElementById('tag').value,
-                    description: document.getElementById('description').value,
-                    IMG: document.getElementById('img').value
-                };
-                
-                if (!cat.name) {
-                    alert('Please enter a cat name');
-                    return;
-                }
-                
-                // Original add logic here
-                fetch(API_URL, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(cat)
-                })
-                .then(res => res.json())
-                .then(data => {
-                    closeModal();
-                    loadCats();
-                    fetchTags();
-                    showNotification('✅ Cat added!', 'success');
-                })
-                .catch(err => {
-                    console.error('Add error:', err);
-                    showNotification('❌ Add failed', 'error');
-                });
+                addCat();
             }
         };
     }
@@ -1374,22 +1408,37 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Setup dashboard modal close
-    const dashboardModal = document.getElementById('dashboardModal');
-    if (dashboardModal) {
-        dashboardModal.querySelector('.close').onclick = function() {
-            dashboardModal.style.display = 'none';
-        };
+    // Handle URL hash on page load
+    const hash = window.location.hash.substring(1);
+    console.log("Initial hash:", hash);
+    
+    if (hash === 'dashboard' && currentUser) {
+        showDashboard();
+    } else if (hash && hash !== 'dashboard' && hash !== '') {
+        showSection(hash);
+    } else {
+        // Default to home
+        showSection('home');
     }
     
-    // Check URL hash
-    if (window.location.hash === '#dashboard' && currentUser) {
-        showDashboard();
-    }
+    // Handle browser back/forward buttons
+    window.addEventListener('hashchange', function() {
+        const newHash = window.location.hash.substring(1);
+        console.log("Hash changed to:", newHash);
+        
+        if (newHash === 'dashboard' && currentUser) {
+            showDashboard();
+        } else if (newHash && newHash !== 'dashboard' && newHash !== '') {
+            showSection(newHash);
+        } else if (newHash === '') {
+            showSection('home');
+        }
+    });
 });
 
 // Make functions global
 window.showDashboard = showDashboard;
+window.showSection = showSection;
 window.editUserCat = editUserCat;
 window.deleteUserCat = deleteUserCat;
 window.updateUserCat = updateUserCat;

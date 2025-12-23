@@ -739,8 +739,19 @@ loginForm.addEventListener("submit", async (e) => {
 });
 
 
-
-
+// Logout button
+const logoutBtn = document.getElementById("logoutBtn");
+logoutBtn.onclick = () => {
+  alert("Logged out successfully.");
+  console.log("User logged out");
+};
+//dashboard
+const dashboardModal = document.getElementById("dashboardModal");
+const openDashboardBtn = document.getElementById("openDashboard");
+const closeDashboardBtn = document.getElementById("closeDashboard");
+openDashboardBtn.onclick = () => dashboardModal.style.display = "flex";
+closeDashboardBtn.onclick = () => dashboardModal.style.display = "none";
+window.onclick = (e) => { if (e.target === dashboardModal) dashboardModal.style.display = "none"; };
 
 
 // Close all modals

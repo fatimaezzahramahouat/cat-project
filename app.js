@@ -161,6 +161,21 @@ export default {
                 );
             }
         }
+
+
+// ... You can implement login similarly, verifying the hashed password
+
+
+
+
+        // ========== STATIC FILES ==========
+        // For everything else, Cloudflare will serve static files from /public
+        // This includes /, /index.html, /style.css, etc.
+
+        // IMPORTANT: Return fetch(request) to let Cloudflare handle static files
+        return fetch(request);
+    }
+}; 
 //REGISTER
 
 ///AUTH kankhdmo b web crypto api hit worker 
@@ -196,18 +211,3 @@ export default {
   }
 }
 
-
-//LOGIN
-// ... You can implement login similarly, verifying the hashed password
-
-
-
-
-        // ========== STATIC FILES ==========
-        // For everything else, Cloudflare will serve static files from /public
-        // This includes /, /index.html, /style.css, etc.
-
-        // IMPORTANT: Return fetch(request) to let Cloudflare handle static files
-        return fetch(request);
-    }
-}; 

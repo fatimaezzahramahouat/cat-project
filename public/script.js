@@ -737,8 +737,12 @@ loginForm.addEventListener("submit", async (e) => {
     alert("Something went wrong.");
   }
 });
-
-
+//dashboard
+// Show dashboard
+function showDashboard() {
+  document.getElementById("dashboard").style.display = "block";
+  loadCats();
+}
 
 
 

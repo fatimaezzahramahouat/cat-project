@@ -217,6 +217,34 @@
         </section>
 
 
+<!-- Dashboard (hidden by default) -->
+<section id="dashboard" class="cyber-section" style="display:none;">
+    <div class="terminal-header">
+        <h1><i class="fas fa-terminal"></i> CAT DASHBOARD</h1>
+        <p>Manage your cat collection</p>
+    </div>
+
+    <div class="controls-panel">
+        <div class="search-field">
+            <i class="fas fa-search"></i>
+            <input type="text" id="searchInput" placeholder="SEARCH CATS..." class="cyber-input" />
+        </div>
+        <div class="filter-field">
+            <i class="fas fa-filter"></i>
+            <select id="tag-filter" class="cyber-select">
+                <option value="">ALL TAGS</option>
+            </select>
+        </div>
+        <button id="addCatBtn" class="cyber-btn primary">ADD CAT</button>
+    </div>
+
+    <div class="gallery-header">
+        <h2><i class="fas fa-cat"></i> FELINE DATABASE</h2>
+        <span id="catCount">0</span> CATS LOADED
+    </div>
+
+    <main class="gallery" id="catGallery"></main>
+</section>
 
 
     </div>

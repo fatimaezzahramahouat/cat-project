@@ -30,7 +30,14 @@
                 <li><a href="#contact" class="cyber-nav-link"><i class="fas fa-envelope"></i> CONTACT</a></li>
                 <li><a href="#"   class="cyber-nav-link"  id="openRegister"><i class="fas fa-user-round"></i> REGISTER</a></li>
                 <li><a href="#"   class="cyber-nav-link"  id="openlogin"><i class="fas fa-user-circle"></i> LOGIN</a></li>
-<!--logout-->
+            <!--dashbord-->
+            
+            <!-- These will be shown when user IS logged in -->
+            <li id="userLinks" style="display: none;">
+                <a href="#dashboard" class="cyber-nav-link"><i class="fas fa-tachometer-alt"></i> DASHBOARD</a>
+                <a href="#" class="cyber-nav-link" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> LOGOUT</a>
+                <span class="user-greeting" id="userGreeting"></span>
+            </li>
               
         
             </ul>
@@ -41,7 +48,106 @@
 
     <!-- Main Content -->
     <div class="cyber-main-container">
+        
+ <!-- Dashboard Section (hidden by default) -->
+    <section id="dashboard" class="cyber-section">
+        <div class="terminal-header">
+            <h1><i class="fas fa-terminal"></i> USER DASHBOARD</h1>
+            <p>Welcome back, <span id="dashboardUsername"></span>!</p>
+            <div class="terminal-status">
+                <span class="status-dot online"></span>
+                USER SESSION ACTIVE
+            </div>
+        </div>
 
+        <!-- Dashboard Stats -->
+        <div class="dashboard-stats">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-cat"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>Your Cats</h3>
+                    <p id="userCatCount">0</p>
+                    <span class="stat-label">Total cats added</span>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-heart"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>Favorites</h3>
+                    <p id="userFavorites">0</p>
+                    <span class="stat-label">Favorite cats</span>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-calendar-alt"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>Member Since</h3>
+                    <p id="joinDate">Today</p>
+                    <span class="stat-label">Registration date</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- User's Cats Section -->
+        <div class="dashboard-section">
+            <div class="section-header">
+                <h2><i class="fas fa-paw"></i> YOUR CAT COLLECTION</h2>
+                <button id="addUserCatBtn" class="cyber-btn primary">
+                    <i class="fas fa-plus"></i> ADD NEW CAT
+                </button>
+            </div>
+            
+            <div class="user-cats-container" id="userCatsContainer">
+                <!-- User's cats will be loaded here -->
+                <div class="no-cats-message" id="noCatsMessage">
+                    <i class="fas fa-cat fa-3x"></i>
+                    <p>You haven't added any cats yet.</p>
+                    <button class="cyber-btn primary" onclick="document.getElementById('addCatBtn').click()">
+                        <i class="fas fa-plus"></i> ADD YOUR FIRST CAT
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="dashboard-section">
+            <h2><i class="fas fa-bolt"></i> QUICK ACTIONS</h2>
+            <div class="quick-actions">
+                <button class="action-btn" onclick="openModal()">
+                    <i class="fas fa-upload"></i>
+                    <span>Upload Cat</span>
+                </button>
+                <button class="action-btn" onclick="window.location.href='#home'">
+                    <i class="fas fa-search"></i>
+                    <span>Browse Gallery</span>
+                </button>
+                <button class="action-btn" onclick="editProfile()">
+                    <i class="fas fa-user-edit"></i>
+                    <span>Edit Profile</span>
+                </button>
+                <button class="action-btn" onclick="shareProfile()">
+                    <i class="fas fa-share-alt"></i>
+                    <span>Share Profile</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="dashboard-section">
+            <h2><i class="fas fa-history"></i> RECENT ACTIVITY</h2>
+            <div class="activity-feed" id="activityFeed">
+                <!-- Activity items will be added here -->
+            </div>
+        </div>
+    </section>
         <!-- Home Section (Cat Gallery) -->
         <section id="home" class="cyber-section active">
             <div class="terminal-header">
@@ -216,28 +322,6 @@
                 </form>
             </div>
         </section>
-
-
-<!-- Dashboard (hidden by default) -->
-<section id="dashboard" class="cyber-section" style="display:none;">
-    <div class="terminal-header">
-        <h1><i class="fas fa-terminal"></i> CAT DASHBOARD</h1>
-        <p>Manage your cat collection</p>
-    </div>
-
-    <div class="controls-panel">
-        <div class="search-field">
-            <i class="fas fa-search"></i>
-            <input type="text" id="searchInput" placeholder="SEARCH CATS..." class="cyber-input" />
-        </div>
-        <div class="filter-field">
-            <i class="fas fa-filter"></i>
-            <select id="tag-filter" class="cyber-select">
-                <option value="">ALL TAGS</option>
-            </select>
-        </div>
-        <button id="addCatBtn" class="cyber-btn primary">ADD CAT</button>
-    </div>
 
     <div class="gallery-header">
         <h2><i class="fas fa-cat"></i> FELINE DATABASE</h2>

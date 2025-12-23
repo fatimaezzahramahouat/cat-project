@@ -740,319 +740,8 @@ loginForm.addEventListener("submit", async (e) => {
 
 
 //dashboard modal
-// ============ DASHBOARD SYSTEM ============
+// Update your addCatWithUser function to immediately update the dashboard:
 
-// User Management
-let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
-let userCats = JSON.parse(localStorage.getItem('userCats')) || {};
-
-// Update Navigation Based on Login Status
-function updateNavigation() {
-    const authLinks = document.querySelectorAll('#openRegister, #openlogin');
-    const userLinks = document.getElementById('userLinks');
-    const userGreeting = document.getElementById('userGreeting');
-    
-    if (currentUser) {
-        // Hide auth links, show user links
-        authLinks.forEach(link => link.parentElement.style.display = 'none');
-        if (userLinks) userLinks.style.display = 'block';
-        if (userGreeting) userGreeting.textContent = `Hi, ${currentUser.username}!`;
-    } else {
-        // Show auth links, hide user links
-        authLinks.forEach(link => link.parentElement.style.display = 'block');
-        if (userLinks) userLinks.style.display = 'none';
-    }
-}
-
-// Show Dashboard
-function showDashboard() {
-    if (!currentUser) {
-        alert('Please login to access dashboard!');
-        document.getElementById('openlogin').click();
-        return;
-    }
-    
-    // Hide all sections
-    document.querySelectorAll('.cyber-section').forEach(section => {
-        section.style.display = 'none';
-        section.classList.remove('active');
-    });
-    
-    // Show dashboard
-    const dashboard = document.getElementById('dashboard');
-    if (dashboard) {
-        dashboard.style.display = 'block';
-        dashboard.classList.add('active');
-        updateDashboard();
-    }
-}
-
-// Update Dashboard Content
-function updateDashboard() {
-    if (!currentUser) return;
-    
-    // Update username
-    const usernameElement = document.getElementById('dashboardUsername');
-    if (usernameElement) {
-        usernameElement.textContent = currentUser.username;
-    }
-    
-    // Load user's cats
-    loadUserCats();
-    
-    // Setup dashboard search and filter
-    setupDashboardControls();
-}
-
-// Setup Dashboard Search and Filter
-function setupDashboardControls() {
-    // Search input
-    const dashboardSearchInput = document.getElementById('dashboardSearchInput');
-    if (dashboardSearchInput) {
-        dashboardSearchInput.addEventListener('input', function() {
-            loadUserCats();
-        });
-    }
-    
-    // Tag filter
-    const dashboardTagFilter = document.getElementById('dashboardTagFilter');
-    if (dashboardTagFilter) {
-        dashboardTagFilter.addEventListener('change', function() {
-            loadUserCats();
-        });
-    }
-    
-    // Add cat button
-    const addUserCatBtn = document.getElementById('addUserCatBtn');
-    if (addUserCatBtn) {
-        addUserCatBtn.addEventListener('click', function() {
-            if (!currentUser) {
-                alert('Please login to add cats!');
-                document.getElementById('openlogin').click();
-                return;
-            }
-            openAddModal();
-        });
-    }
-}
-
-// Load User's Cats from API
-function loadUserCats() {
-    const userCatsGallery = document.getElementById('userCatsGallery');
-    const noCatsMessage = document.getElementById('noCatsMessage');
-    
-    if (!userCatsGallery) return;
-    
-    showNotification('Loading your cats...', 'info');
-    
-    // Get ALL cats from API
-    fetch(API_URL)
-        .then(res => {
-            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-            return res.json();
-        })
-        .then(allCats => {
-            // Filter cats by current user (using localStorage userCats as reference)
-            const userCatIds = (userCats[currentUser.id] || []).map(cat => cat.id);
-            const userCatsList = allCats.filter(cat => userCatIds.includes(cat.id));
-            
-            // Also store in userCats localStorage for offline access
-            if (userCatsList.length > 0) {
-                userCats[currentUser.id] = userCatsList;
-                localStorage.setItem('userCats', JSON.stringify(userCats));
-            }
-            
-            displayUserCats(userCatsList);
-            
-            // Update stats
-            updateDashboardStats(userCatsList);
-        })
-        .catch(err => {
-            console.error('❌ Error loading user cats:', err);
-            // Fallback to localStorage
-            const userCatsList = userCats[currentUser.id] || [];
-            displayUserCats(userCatsList);
-            updateDashboardStats(userCatsList);
-        });
-}
-
-// Display User Cats in Gallery
-function displayUserCats(cats) {
-    const userCatsGallery = document.getElementById('userCatsGallery');
-    const noCatsMessage = document.getElementById('noCatsMessage');
-    
-    if (!userCatsGallery) return;
-    
-    if (!cats || cats.length === 0) {
-        if (noCatsMessage) noCatsMessage.style.display = 'block';
-        userCatsGallery.innerHTML = '';
-        return;
-    }
-    
-    if (noCatsMessage) noCatsMessage.style.display = 'none';
-    userCatsGallery.innerHTML = '';
-    
-    // Apply search filter
-    const dashboardSearchInput = document.getElementById('dashboardSearchInput');
-    let filteredCats = cats;
-    
-    if (dashboardSearchInput && dashboardSearchInput.value) {
-        const query = dashboardSearchInput.value.toLowerCase();
-        filteredCats = cats.filter(cat => 
-            (cat.name && cat.name.toLowerCase().includes(query)) ||
-            (cat.tag && cat.tag.toLowerCase().includes(query)) ||
-            (cat.description && cat.description.toLowerCase().includes(query))
-        );
-    }
-    
-    // Apply tag filter
-    const dashboardTagFilter = document.getElementById('dashboardTagFilter');
-    if (dashboardTagFilter && dashboardTagFilter.value) {
-        const selectedTag = dashboardTagFilter.value;
-        filteredCats = filteredCats.filter(cat => 
-            cat.tag && cat.tag.toLowerCase() === selectedTag.toLowerCase()
-        );
-    }
-    
-    // Display filtered cats
-    if (filteredCats.length === 0) {
-        userCatsGallery.innerHTML = '<div class="no-results">No cats match your search</div>';
-        return;
-    }
-    
-    // Update tag filter dropdown
-    updateDashboardTagFilter(cats);
-    
-    // Render gallery (same as home page)
-    filteredCats.forEach(cat => {
-        const catCard = createCatCard(cat);
-        userCatsGallery.appendChild(catCard);
-    });
-}
-
-// Create Cat Card (same style as home page)
-function createCatCard(cat) {
-    const div = document.createElement("div");
-    div.className = "card";
-    div.innerHTML = `
-        ${cat.IMG ? `<img src="${cat.IMG}" alt="${cat.name}" loading="lazy" />` : '<div class="no-image">No Image</div>'}
-        <h3>${escapeHTML(cat.name) || 'Unnamed Cat'}</h3>
-        <p>${escapeHTML(cat.description) || 'No description available'}</p>
-        <span class="tag-badge">${escapeHTML(cat.tag) || 'No tag'}</span>
-        <div class="actions">
-            <button onclick="editUserCat(${cat.id})" class="btn-edit">Edit</button>
-            <button onclick="deleteUserCat(${cat.id})" class="btn-delete">Delete</button>
-        </div>
-    `;
-    return div;
-}
-
-// Update Dashboard Tag Filter
-function updateDashboardTagFilter(cats) {
-    const dashboardTagFilter = document.getElementById('dashboardTagFilter');
-    if (!dashboardTagFilter) return;
-    
-    // Get unique tags from user's cats
-    const uniqueTags = [...new Set(cats
-        .filter(cat => cat.tag && cat.tag.trim())
-        .map(cat => cat.tag.trim().toLowerCase())
-    )].sort();
-    
-    // Save current selection
-    const currentValue = dashboardTagFilter.value;
-    
-    // Update dropdown
-    dashboardTagFilter.innerHTML = '<option value="">ALL TAGS</option>';
-    
-    uniqueTags.forEach(tag => {
-        const option = document.createElement('option');
-        option.value = tag;
-        option.textContent = tag.charAt(0).toUpperCase() + tag.slice(1);
-        dashboardTagFilter.appendChild(option);
-    });
-    
-    // Restore selection
-    if (currentValue && uniqueTags.includes(currentValue.toLowerCase())) {
-        dashboardTagFilter.value = currentValue;
-    }
-}
-
-// Update Dashboard Stats
-function updateDashboardStats(cats) {
-    const userCatCount = document.getElementById('userCatCount');
-    if (userCatCount) {
-        userCatCount.textContent = cats.length;
-    }
-}
-
-// Edit User Cat
-function editUserCat(catId) {
-    console.log("Editing cat:", catId);
-    
-    // Find the cat
-    const cat = catsData.find(c => c.id == catId) || 
-                (userCats[currentUser.id] || []).find(c => c.id == catId);
-    
-    if (cat) {
-        editingId = catId;
-        
-        nameInput.value = cat.name || '';
-        tagInput.value = cat.tag || '';
-        descriptionInput.value = cat.description || '';
-        imgInput.value = cat.IMG || cat.img || '';
-        
-        document.getElementById("addBtn").style.display = "none";
-        document.getElementById("editBtn").style.display = "inline-block";
-        
-        modal.style.display = "flex";
-    } else {
-        showNotification('❌ Cat not found', 'error');
-    }
-}
-
-// Delete User Cat
-function deleteUserCat(catId) {
-    if (!confirm('Are you sure you want to delete this cat?')) return;
-    
-    showNotification('Deleting cat...', 'info');
-    
-    fetch(`${API_URL}/${catId}`, {
-        method: "DELETE"
-    })
-    .then(res => {
-        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-        return res.json();
-    })
-    .then(data => {
-        console.log("✅ Cat deleted:", data);
-        
-        // Remove from user's collection
-        if (currentUser && userCats[currentUser.id]) {
-            userCats[currentUser.id] = userCats[currentUser.id].filter(c => c.id != catId);
-            localStorage.setItem('userCats', JSON.stringify(userCats));
-        }
-        
-        // Remove from global catsData
-        catsData = catsData.filter(c => c.id != catId);
-        
-        showNotification('✅ Cat deleted successfully!', 'success');
-        
-        // Refresh displays
-        if (window.location.hash === '#dashboard') {
-            loadUserCats();
-        } else {
-            loadCats();
-        }
-        
-        fetchTags();
-    })
-    .catch(err => {
-        console.error('❌ Error deleting cat:', err);
-        showNotification('❌ Failed to delete cat. Please try again.', 'error');
-    });
-}
-
-// Modified Add Cat Function to Track User
 function addCatWithUser() {
     const name = nameInput.value;
     const tag = tagInput.value;
@@ -1090,27 +779,44 @@ function addCatWithUser() {
     .then(data => {
         console.log("✅ Cat added:", data);
         
-        // Add to user's collection
+        // Create complete cat object with ID
+        const newCat = {
+            ...cat,
+            id: data.id,
+            addedDate: new Date().toISOString()
+        };
+        
+        // Add to user's collection IMMEDIATELY
         if (currentUser) {
-            const userCat = { ...cat, id: data.id };
             if (!userCats[currentUser.id]) {
                 userCats[currentUser.id] = [];
             }
-            userCats[currentUser.id].push(userCat);
+            userCats[currentUser.id].push(newCat);
             localStorage.setItem('userCats', JSON.stringify(userCats));
-            
-            // Add to global catsData
-            catsData.push(userCat);
         }
+        
+        // Also add to global catsData for home page
+        catsData.push(newCat);
         
         showNotification('✅ Cat added successfully!', 'success');
         closeModal();
         
-        // Refresh displays
+        // IMMEDIATELY update the dashboard gallery
         if (window.location.hash === '#dashboard') {
+            // Clear form and reload user's cats
+            nameInput.value = '';
+            tagInput.value = '';
+            descriptionInput.value = '';
+            imgInput.value = '';
+            
+            // Force reload user's cats
             loadUserCats();
+        } else {
+            // If on home page, refresh home gallery
+            loadCats();
         }
-        loadCats();
+        
+        // Update tags filter
         fetchTags();
     })
     .catch(err => {
@@ -1119,120 +825,123 @@ function addCatWithUser() {
     });
 }
 
-// Handle Login Success
-function handleLoginSuccess(userData) {
-    currentUser = userData.user;
-    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+// Also update the loadUserCats function to handle immediate updates better:
+
+function loadUserCats() {
+    const userCatsGallery = document.getElementById('userCatsGallery');
+    const noCatsMessage = document.getElementById('noCatsMessage');
     
-    // Update navigation
-    updateNavigation();
+    if (!userCatsGallery) return;
     
-    // Show dashboard automatically
-    showDashboard();
+    // First check localStorage for instant display
+    const localCats = userCats[currentUser.id] || [];
     
-    // Close login modal
-    loginModal.style.display = 'none';
-    loginForm.reset();
+    if (localCats.length > 0) {
+        displayUserCats(localCats);
+    }
     
-    showNotification(`Welcome back, ${currentUser.username}!`, 'success');
+    // Then fetch from API for latest data
+    fetch(API_URL)
+        .then(res => {
+            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+            return res.json();
+        })
+        .then(allCats => {
+            // Filter cats by current user
+            const userCatIds = (userCats[currentUser.id] || []).map(cat => cat.id);
+            const userCatsList = allCats.filter(cat => userCatIds.includes(cat.id));
+            
+            // Update localStorage with fresh data
+            if (userCatsList.length > 0) {
+                userCats[currentUser.id] = userCatsList;
+                localStorage.setItem('userCats', JSON.stringify(userCats));
+                
+                // Update display with fresh data
+                displayUserCats(userCatsList);
+            }
+            
+            // Update stats
+            updateDashboardStats(userCatsList);
+        })
+        .catch(err => {
+            console.error('❌ Error loading user cats from API:', err);
+            // Keep displaying local cats if API fails
+            if (localCats.length === 0 && noCatsMessage) {
+                noCatsMessage.style.display = 'block';
+            }
+        });
 }
 
-// Logout Function
-function logoutUser() {
-    if (!confirm('Are you sure you want to logout?')) return;
+// Make sure displayUserCats is called correctly:
+function displayUserCats(cats) {
+    const userCatsGallery = document.getElementById('userCatsGallery');
+    const noCatsMessage = document.getElementById('noCatsMessage');
     
-    currentUser = null;
-    localStorage.removeItem('currentUser');
+    if (!userCatsGallery) return;
     
-    // Update navigation
-    updateNavigation();
+    if (!cats || cats.length === 0) {
+        if (noCatsMessage) noCatsMessage.style.display = 'block';
+        userCatsGallery.innerHTML = '';
+        return;
+    }
     
-    // Show home section
-    document.querySelectorAll('.cyber-section').forEach(section => {
-        section.style.display = 'none';
-        section.classList.remove('active');
+    if (noCatsMessage) noCatsMessage.style.display = 'none';
+    
+    // Clear gallery first
+    userCatsGallery.innerHTML = '';
+    
+    // Apply filters
+    const dashboardSearchInput = document.getElementById('dashboardSearchInput');
+    let filteredCats = cats;
+    
+    if (dashboardSearchInput && dashboardSearchInput.value) {
+        const query = dashboardSearchInput.value.toLowerCase();
+        filteredCats = cats.filter(cat => 
+            (cat.name && cat.name.toLowerCase().includes(query)) ||
+            (cat.tag && cat.tag.toLowerCase().includes(query)) ||
+            (cat.description && cat.description.toLowerCase().includes(query))
+        );
+    }
+    
+    // Apply tag filter
+    const dashboardTagFilter = document.getElementById('dashboardTagFilter');
+    if (dashboardTagFilter && dashboardTagFilter.value) {
+        const selectedTag = dashboardTagFilter.value;
+        filteredCats = filteredCats.filter(cat => 
+            cat.tag && cat.tag.toLowerCase() === selectedTag.toLowerCase()
+        );
+    }
+    
+    // Display results
+    if (filteredCats.length === 0) {
+        userCatsGallery.innerHTML = '<div class="no-results">No cats match your search</div>';
+        return;
+    }
+    
+    // Update tag filter dropdown
+    updateDashboardTagFilter(cats);
+    
+    // Render all cats
+    filteredCats.forEach(cat => {
+        const catCard = createCatCard(cat);
+        userCatsGallery.appendChild(catCard);
     });
-    document.getElementById('home').style.display = 'block';
-    document.getElementById('home').classList.add('active');
-    
-    showNotification('Logged out successfully!', 'info');
 }
 
-// ============ INITIALIZE DASHBOARD ============
-
-// Override existing addCat function
-window.addCat = function() {
-    addCatWithUser();
-};
-
-// Override login form handler
-const originalLoginHandler = loginForm.onsubmit;
-loginForm.onsubmit = async function(e) {
-    e.preventDefault();
+// Also add this function to ensure modal is properly closed:
+function closeModal() {
+    modal.style.display = "none";
+    editingId = null;
     
-    const email = document.getElementById("loginEmail").value;
-    const password = document.getElementById("loginPassword").value;
+    // Reset form
+    nameInput.value = "";
+    tagInput.value = "";
+    descriptionInput.value = "";
+    imgInput.value = "";
     
-    try {
-        const res = await fetch("https://cat-project.fatimaezzahramahouat.workers.dev/login", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, password })
-        });
-        
-        const data = await res.json();
-        
-        if (res.ok) {
-            handleLoginSuccess(data);
-        } else {
-            alert(data.message || 'Login failed!');
-        }
-    } catch (err) {
-        console.error("Login error:", err);
-        alert("Something went wrong.");
-    }
-};
-
-// Initialize on page load
-document.addEventListener('DOMContentLoaded', function () {
-    // Update navigation based on login status
-    updateNavigation();
-    
-    // Check for dashboard in URL
-    if (window.location.hash === '#dashboard') {
-        showDashboard();
-    }
-    
-    // Setup dashboard link click
-    document.querySelectorAll('a[href="#dashboard"]').forEach(link => {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();
-            showDashboard();
-        });
-    });
-    
-    // Setup logout button
-    const logoutBtn = document.getElementById('logoutBtn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            logoutUser();
-        });
-    }
-    
-    // Monitor URL hash changes
-    window.addEventListener('hashchange', function() {
-        if (window.location.hash === '#dashboard') {
-            showDashboard();
-        }
-    });
-});
-
-// Make functions globally available
-window.showDashboard = showDashboard;
-window.logoutUser = logoutUser;
-window.editUserCat = editUserCat;
-window.deleteUserCat = deleteUserCat;
+    document.getElementById("addBtn").style.display = "inline-block";
+    document.getElementById("editBtn").style.display = "none";
+}
 
 
 

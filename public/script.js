@@ -702,36 +702,41 @@ form.addEventListener("submit", async (e) => {
 // Login modal open/close
 const loginModal = document.getElementById("loginModal");
 const openLoginBtn = document.getElementById("openlogin");
-const closeLoginBtn = document.getElementById("closelogin");
+const closeLoginBtn = document.getElementById("closeLogin");
+
 openLoginBtn.onclick = () => loginModal.style.display = "flex";
 closeLoginBtn.onclick = () => loginModal.style.display = "none";
 window.onclick = (e) => { if (e.target === loginModal) loginModal.style.display = "none"; };
-// Handle login form submission
+
+// Handle login form
 const loginForm = document.getElementById("loginForm");
 loginForm.addEventListener("submit", async (e) => {
   e.preventDefault();
-    const email = document.getElementById("loginEmail").value;
-    const password = document.getElementById("loginPassword").value;
-    try {
-        const res = await fetch("https://cat-project.fatimaezzahramahouat.workers.dev/login", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, password })
-        });
-        const data = await res.json();
-        alert(data.message);
-        if (res.ok) {
-            loginModal.style.display = "none"; // close modal
-            loginForm.reset(); // clear form
-        }
-    } catch (err) {
 
+  const email = document.getElementById("loginEmail").value;
+  const password = document.getElementById("loginPassword").value;
 
-        console.error("Login error:", err);
-        alert("Something went wrong.");
+  try {
+    const res = await fetch("https://cat-project.fatimaezzahramahouat.workers.dev/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password })
+    });
+
+    const data = await res.json();
+    alert(data.message);
+
+    if (res.ok) {
+      loginModal.style.display = "none";
+      loginForm.reset();
+      console.log("Logged in user:", data.user);
     }
-});
 
+  } catch (err) {
+    console.error("Login error:", err);
+    alert("Something went wrong.");
+  }
+});
 
 
 

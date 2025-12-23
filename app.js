@@ -223,29 +223,60 @@ if (request.method === "POST" && new URL(request.url).pathname === "/login") {
 
 
 //LOGIN
-    async function login(request, env ,corsHeaders) {
-    const body = await request.json();
-    const { username, password } = body;
-    if (!username || !password) {
-      return Response.json({ message: "All fields required" }, { status: 400 });
+   async function login(request, env, corsHeaders) {
+  const body = await request.json();
+  const { email, password } = body;
+
+  if (!email || !password) {
+    return Response.json(
+      { message: "Email and password are required" },
+      { status: 400, headers: corsHeaders }
+    );
+  }
+
+  try {
+    // get user by email
+    const { results } = await env.DB
+      .prepare("SELECT * FROM users WHERE email = ?")
+      .bind(email)
+      .all();
+
+    if (results.length === 0) {
+      return Response.json(
+        { message: "User not found" },
+        { status: 404, headers: corsHeaders }
+      );
     }
-    // 🔐 hash password login
+
+    const user = results[0];
+
+    // hash password entered by user
     const encoder = new TextEncoder();
     const data = encoder.encode(password);
     const hashBuffer = await crypto.subtle.digest("SHA-256", data);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     const password_hash = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
-    const { results } = await env.DB.prepare(`
-        SELECT * FROM users WHERE username = ? AND password_hash = ?
-    `).bind(username, password_hash).all();
-    if (results.length === 0) {
+
+    // compare hash
+    if (user.password_hash !== password_hash) {
       return Response.json(
-        { message: "Invalid username or password" },
-        { status: 401 , headers: corsHeaders }
+        { message: "Invalid credentials" },
+        { status: 401, headers: corsHeaders }
       );
     }
+
+    // success
     return Response.json(
-      { message: "Login successful" },
+      { message: "Login successful", user: { id: user.id, username: user.username, email: user.email } },
       { headers: corsHeaders }
     );
+
+  } catch (err) {
+    console.error("Login error:", err);
+    return Response.json(
+      { message: "Server error" },
+      { status: 500, headers: corsHeaders }
+    );
   }
+}
+

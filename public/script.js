@@ -659,8 +659,7 @@ document.querySelector('.contact-form').addEventListener('submit', function (e) 
 //REGISTER MODAL
 const registerModal = document.getElementById("registerModal");
 const openRegisterBtn = document.getElementById("openRegister");
-const closeRegisterBtn = document.querySelector(".close");
-
+const closeRegisterBtn = document.getElementById("closeRegister");
 
 openRegisterBtn.onclick = () => registerModal.style.display = "flex";
 closeRegisterBtn.onclick = () => registerModal.style.display = "none";  
@@ -669,7 +668,7 @@ window.onclick = (e) => {
       registerModal.style.display = "none";
     }
     };
-
+    
 
 
 

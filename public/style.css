@@ -2593,3 +2593,164 @@ div#pagination.pagination {
         background: linear-gradient(135deg, #009955, #00cc77);
         box-shadow: 0 5px 15px rgba(0, 204, 119, 0.4);
    }
+   /* ============ LOGIN FORM BUTTON STYLES ============ */
+
+/* Main button styling */
+#loginForm > button {
+    /* Layout */
+    display: block;
+    width: 100%;
+    padding: 14px 20px;
+    margin-top: 20px;
+    
+    /* Colors */
+    background: linear-gradient(135deg, #00ff99, #00cc77);
+    color: #000000;
+    border: 2px solid #00ff99;
+    
+    /* Typography */
+    font-family: 'Orbitron', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    
+    /* Effects */
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+}
+
+/* Hover effect */
+#loginForm > button:hover {
+    background: linear-gradient(135deg, #00cc77, #00ff99);
+    color: #000000;
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 255, 153, 0.4);
+    border-color: #00ff99;
+}
+
+/* Active/Click effect */
+#loginForm > button:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 5px rgba(0, 255, 153, 0.3);
+}
+
+/* Focus effect */
+#loginForm > button:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 255, 153, 0.3);
+}
+
+/* Loading/disabled state */
+#loginForm > button:disabled {
+    background: linear-gradient(135deg, #666, #888);
+    border-color: #666;
+    color: #999;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Cyber/tech effect */
+#loginForm > button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, 
+        transparent, 
+        rgba(255, 255, 255, 0.2), 
+        transparent
+    );
+    transition: left 0.5s ease;
+    z-index: -1;
+}
+
+#loginForm > button:hover::before {
+    left: 100%;
+}
+
+/* Icon styling if you add one */
+#loginForm > button i {
+    margin-right: 10px;
+    font-size: 18px;
+}
+
+/* Animation for form submission */
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+#loginForm > button.submitting {
+    animation: pulse 1s infinite;
+    background: linear-gradient(135deg, #ffcc00, #ff9900);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    #loginForm > button {
+        padding: 12px 16px;
+        font-size: 14px;
+    }
+}
+
+/* Dark mode variant */
+@media (prefers-color-scheme: dark) {
+    #loginForm > button {
+        background: linear-gradient(135deg, #00cc77, #009955);
+        border-color: #00cc77;
+    }
+    
+    #loginForm > button:hover {
+        background: linear-gradient(135deg, #009955, #00cc77);
+        box-shadow: 0 5px 15px rgba(0, 204, 119, 0.4);
+    }
+}
+
+/* Add this for the form container too */
+#loginForm {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+#loginForm input {
+    width: 100%;
+    padding: 12px 15px;
+    background: rgba(0, 0, 0, 0.7);
+    border: 1px solid #00ffff;
+    border-radius: 6px;
+    color: #e0e0e0;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+#loginForm input:focus {
+    outline: none;
+    border-color: #00ff99;
+    box-shadow: 0 0 10px rgba(0, 255, 153, 0.3);
+}
+
+#loginForm input::placeholder {
+    color: #888;
+    font-family: 'Share Tech Mono', monospace;
+}
+
+/* Optional: Add labels if you have them */
+#loginForm label {
+    color: #00ff99;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 14px;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}

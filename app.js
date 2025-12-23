@@ -18,7 +18,8 @@ export default {
         
        //REGISTER ROUTE
         if (request.method === "POST" && new URL(request.url).pathname === "/register") {
-        return register(request, env);
+      return register(request, env, corsHeaders);
+
         }
         // ========== API ROUTES ==========
 
@@ -180,7 +181,7 @@ export default {
 
 ///AUTH kankhdmo b web crypto api hit worker 
 
-  async function register(request, env) {
+  async function register(request, env ,corsHeaders) {
   const body = await request.json();
   const { username, email, password } = body;
 
@@ -206,13 +207,12 @@ export default {
   { headers: corsHeaders }
 );
 
-
-  } catch (err) {
-   return Response.json(
-  { message: "All fields required" },
-  { status: 400, headers: corsHeaders }
-);
+} catch (err) {
+  return Response.json(
+    { message: "Username or email already exists" },
+    { status: 400, headers: corsHeaders }
+  );
+}
 
   }
-}
 

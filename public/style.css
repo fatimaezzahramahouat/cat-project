@@ -19,7 +19,7 @@
 
 body.cyber-theme {
     background: var(--cyber-dark);
-    color: rgb(252, 12, 180);
+    color: var(--cyber-primary);
     font-family: 'Share Tech Mono', monospace;
     min-height: 100vh;
 }

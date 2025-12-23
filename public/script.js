@@ -656,7 +656,7 @@ document.querySelector('.contact-form').addEventListener('submit', function (e) 
 
 
 
-//REGISTER MODAL
+//REGISTER MODAL hada gher dyal html
 const registerModal = document.getElementById("registerModal");
 const openRegisterBtn = document.getElementById("openRegister");
 const closeRegisterBtn = document.getElementById("closeRegister");
@@ -668,11 +668,11 @@ window.onclick = (e) => {
       registerModal.style.display = "none";
     }
     };
-
+//zdto ela qbl register form submission
 document.getElementById("registerForm").addEventListener("submit", async (e) => {
   e.preventDefault();
 
-  const res = await fetch("/register", {
+  const res = await fetch("/register", {  // Make sure this URL matches your deployed Worker
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({

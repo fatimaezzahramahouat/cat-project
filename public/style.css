@@ -2588,3 +2588,8 @@ div#pagination.pagination {
     font-size: 0.8rem;
     font-family: 'Share Tech Mono', monospace;
 }
+
+   #loginForm > button:hover {
+        background: linear-gradient(135deg, #009955, #00cc77);
+        box-shadow: 0 5px 15px rgba(0, 204, 119, 0.4);
+   }

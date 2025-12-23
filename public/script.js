@@ -740,264 +740,62 @@ loginForm.addEventListener("submit", async (e) => {
 
 
 //dashboard modal
-// ============ DASHBOARD COMPLETE CODE ============
+// ============ FIX: IMMEDIATE UPDATE FUNCTIONS ============
 
-// User Management
-let currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
-let userCats = JSON.parse(localStorage.getItem('userCats')) || {};
-
-// 1. Update Navigation
-function updateNavigation() {
-    const userLinks = document.getElementById('userLinks');
-    const userGreeting = document.getElementById('userGreeting');
-    const registerLink = document.getElementById('openRegister');
-    const loginLink = document.getElementById('openlogin');
-    
-    if (currentUser) {
-        // Show user links
-        if (userLinks) userLinks.style.display = 'block';
-        if (userGreeting) userGreeting.textContent = `Hi, ${currentUser.username}!`;
-        
-        // Hide auth links
-        if (registerLink) registerLink.parentElement.style.display = 'none';
-        if (loginLink) loginLink.parentElement.style.display = 'none';
-    } else {
-        // Hide user links
-        if (userLinks) userLinks.style.display = 'none';
-        
-        // Show auth links
-        if (registerLink) registerLink.parentElement.style.display = 'block';
-        if (loginLink) loginLink.parentElement.style.display = 'block';
-    }
-}
-
-// 2. Show Dashboard
-function showDashboard() {
-    if (!currentUser) {
-        alert('Please login to access dashboard!');
-        document.getElementById('openlogin').click();
-        return;
-    }
-    
-    // Hide all sections
-    document.querySelectorAll('.cyber-section').forEach(section => {
-        section.style.display = 'none';
-    });
-    
-    // Show dashboard
-    const dashboard = document.getElementById('dashboard');
-    if (dashboard) {
-        dashboard.style.display = 'block';
-        updateDashboard();
-    }
-}
-
-// 3. Update Dashboard
-function updateDashboard() {
-    if (!currentUser) return;
-    
-    // Update username
-    const usernameElement = document.getElementById('dashboardUsername');
-    if (usernameElement) {
-        usernameElement.textContent = currentUser.username;
-    }
-    
-    // Load user's cats
-    loadUserCats();
-}
-
-// 4. Load User Cats
-function loadUserCats() {
-    const userCatsGallery = document.getElementById('userCatsGallery');
-    const noCatsMessage = document.getElementById('noCatsMessage');
-    
-    if (!userCatsGallery) return;
-    
-    // Get cats from localStorage first
-    const userCatsList = userCats[currentUser.id] || [];
-    
-    if (userCatsList.length === 0) {
-        if (noCatsMessage) noCatsMessage.style.display = 'block';
-        userCatsGallery.innerHTML = '';
-        return;
-    }
-    
-    if (noCatsMessage) noCatsMessage.style.display = 'none';
-    
-    // Display cats
-    displayFilteredCats(userCatsList);
-    
-    // Then fetch from API for updates
-    fetch(API_URL)
-        .then(res => res.json())
-        .then(allCats => {
-            const userCatIds = userCatsList.map(cat => cat.id);
-            const updatedCats = allCats.filter(cat => userCatIds.includes(cat.id));
-            
-            if (updatedCats.length > 0) {
-                userCats[currentUser.id] = updatedCats;
-                localStorage.setItem('userCats', JSON.stringify(userCats));
-                displayFilteredCats(updatedCats);
-            }
-        })
-        .catch(err => console.log('Using local cats'));
-}
-
-// 5. Display Filtered Cats
-function displayFilteredCats(cats) {
-    const userCatsGallery = document.getElementById('userCatsGallery');
-    const dashboardSearch = document.getElementById('dashboardSearchInput');
-    const dashboardTagFilter = document.getElementById('dashboardTagFilter');
-    
-    if (!userCatsGallery) return;
-    
-    // Apply filters
-    let filteredCats = [...cats];
-    
-    // Search filter
-    if (dashboardSearch && dashboardSearch.value) {
-        const query = dashboardSearch.value.toLowerCase();
-        filteredCats = filteredCats.filter(cat => 
-            (cat.name && cat.name.toLowerCase().includes(query)) ||
-            (cat.tag && cat.tag.toLowerCase().includes(query)) ||
-            (cat.description && cat.description.toLowerCase().includes(query))
-        );
-    }
-    
-    // Tag filter
-    if (dashboardTagFilter && dashboardTagFilter.value) {
-        const tag = dashboardTagFilter.value.toLowerCase();
-        filteredCats = filteredCats.filter(cat => 
-            cat.tag && cat.tag.toLowerCase() === tag
-        );
-    }
-    
-    // Update tag dropdown
-    updateTagDropdown(cats);
-    
-    // Clear and display
-    userCatsGallery.innerHTML = '';
-    
-    if (filteredCats.length === 0) {
-        userCatsGallery.innerHTML = '<div class="no-results">No cats found</div>';
-        return;
-    }
-    
-    filteredCats.forEach(cat => {
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.innerHTML = `
-            ${cat.IMG ? `<img src="${cat.IMG}" alt="${cat.name}" loading="lazy" />` : '<div class="no-image">No Image</div>'}
-            <h3>${escapeHTML(cat.name) || 'Unnamed Cat'}</h3>
-            <p>${escapeHTML(cat.description) || 'No description'}</p>
-            <span class="tag-badge">${escapeHTML(cat.tag) || 'No tag'}</span>
-            <div class="actions">
-                <button onclick="editUserCat(${cat.id})" class="btn-edit">Edit</button>
-                <button onclick="deleteUserCat(${cat.id})" class="btn-delete">Delete</button>
-            </div>
-        `;
-        userCatsGallery.appendChild(card);
-    });
-}
-
-// 6. Update Tag Dropdown
-function updateTagDropdown(cats) {
-    const tagFilter = document.getElementById('dashboardTagFilter');
-    if (!tagFilter) return;
-    
-    const tags = [...new Set(cats
-        .filter(cat => cat.tag && cat.tag.trim())
-        .map(cat => cat.tag.trim().toLowerCase())
-    )].sort();
-    
-    const currentValue = tagFilter.value;
-    
-    tagFilter.innerHTML = '<option value="">ALL TAGS</option>';
-    tags.forEach(tag => {
-        const option = document.createElement('option');
-        option.value = tag;
-        option.textContent = tag.charAt(0).toUpperCase() + tag.slice(1);
-        tagFilter.appendChild(option);
-    });
-    
-    if (currentValue && tags.includes(currentValue.toLowerCase())) {
-        tagFilter.value = currentValue;
-    }
-}
-
-// 7. Edit User Cat
-function editUserCat(catId) {
-    console.log("Editing cat:", catId);
-    
-    // Find cat
-    let cat = null;
-    
-    // Check user's collection
-    if (currentUser && userCats[currentUser.id]) {
-        cat = userCats[currentUser.id].find(c => c.id == catId);
-    }
-    
-    // Check global data
-    if (!cat) {
-        cat = catsData.find(c => c.id == catId);
-    }
-    
-    if (!cat) {
-        alert('Cat not found!');
-        return;
-    }
-    
-    // Fill modal
-    editingId = catId;
-    document.getElementById('name').value = cat.name || '';
-    document.getElementById('tag').value = cat.tag || '';
-    document.getElementById('description').value = cat.description || '';
-    document.getElementById('img').value = cat.IMG || '';
-    
-    // Show edit button
-    document.getElementById('addBtn').style.display = 'none';
-    document.getElementById('editBtn').style.display = 'inline-block';
-    
-    // Show modal
-    modal.style.display = 'flex';
-}
-
-// 8. Delete User Cat
+// Fix 1: Update deleteUserCat to refresh dashboard immediately
 function deleteUserCat(catId) {
-    if (!confirm('Delete this cat?')) return;
+    if (!confirm('Are you sure you want to delete this cat?')) return;
     
+    // Show loading
+    showNotification('Deleting cat...', 'info');
+    
+    // 1. First remove from the UI immediately
+    const userCatsGallery = document.getElementById('userCatsGallery');
+    if (userCatsGallery) {
+        // Find and remove the card with this catId
+        const cards = userCatsGallery.querySelectorAll('.card');
+        cards.forEach(card => {
+            const deleteBtn = card.querySelector('.btn-delete');
+            if (deleteBtn && deleteBtn.onclick && 
+                deleteBtn.onclick.toString().includes(catId)) {
+                card.remove(); // Remove from DOM immediately
+            }
+        });
+    }
+    
+    // 2. Update localStorage immediately
+    if (currentUser && userCats[currentUser.id]) {
+        userCats[currentUser.id] = userCats[currentUser.id].filter(c => c.id != catId);
+        localStorage.setItem('userCats', JSON.stringify(userCats));
+    }
+    
+    // 3. Then delete from API
     fetch(`${API_URL}/${catId}`, {
         method: 'DELETE'
     })
     .then(res => res.json())
     .then(data => {
-        // Remove from user collection
-        if (currentUser && userCats[currentUser.id]) {
-            userCats[currentUser.id] = userCats[currentUser.id].filter(c => c.id != catId);
-            localStorage.setItem('userCats', JSON.stringify(userCats));
-        }
+        console.log('✅ Cat deleted from API:', data);
         
-        // Remove from global data
+        // 4. Update global catsData
         catsData = catsData.filter(c => c.id != catId);
         
-        // Refresh
-        if (window.location.hash === '#dashboard') {
-            loadUserCats();
-        } else {
-            loadCats();
-        }
+        // 5. Show success message
+        showNotification('✅ Cat deleted successfully!', 'success');
         
+        // 6. Update stats if on dashboard
+        updateDashboardStats();
+        
+        // 7. Update tags
         fetchTags();
-        
-        alert('Cat deleted!');
     })
     .catch(err => {
-        console.error('Delete error:', err);
-        alert('Error deleting cat');
+        console.error('❌ Delete error:', err);
+        showNotification('❌ Delete failed', 'error');
     });
 }
 
-// 9. Update User Cat
+// Fix 2: Update updateUserCat to refresh immediately
 function updateUserCat() {
     if (!editingId) {
         alert('No cat selected!');
@@ -1016,6 +814,27 @@ function updateUserCat() {
         return;
     }
     
+    // Show loading
+    showNotification('Updating cat...', 'info');
+    
+    // 1. First update localStorage immediately
+    if (currentUser && userCats[currentUser.id]) {
+        const index = userCats[currentUser.id].findIndex(c => c.id == editingId);
+        if (index !== -1) {
+            // Update in localStorage
+            userCats[currentUser.id][index] = {
+                ...userCats[currentUser.id][index],
+                ...cat,
+                id: editingId
+            };
+            localStorage.setItem('userCats', JSON.stringify(userCats));
+            
+            // Update the card in DOM immediately
+            updateCatCardInDOM(editingId, cat);
+        }
+    }
+    
+    // 2. Then send to API
     fetch(`${API_URL}/${editingId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -1023,233 +842,192 @@ function updateUserCat() {
     })
     .then(res => res.json())
     .then(data => {
-        // Update user collection
-        if (currentUser && userCats[currentUser.id]) {
-            const index = userCats[currentUser.id].findIndex(c => c.id == editingId);
-            if (index !== -1) {
-                userCats[currentUser.id][index] = { ...userCats[currentUser.id][index], ...cat };
-                localStorage.setItem('userCats', JSON.stringify(userCats));
-            }
-        }
+        console.log('✅ Cat updated in API:', data);
         
-        // Update global data
+        // 3. Update global catsData
         const globalIndex = catsData.findIndex(c => c.id == editingId);
         if (globalIndex !== -1) {
             catsData[globalIndex] = { ...catsData[globalIndex], ...cat };
         }
         
+        // 4. Close modal
         closeModal();
         
-        // Refresh
-        if (window.location.hash === '#dashboard') {
-            loadUserCats();
-        } else {
-            loadCats();
-        }
+        // 5. Show success
+        showNotification('✅ Cat updated successfully!', 'success');
         
+        // 6. Update tags
         fetchTags();
-        
-        alert('Cat updated!');
     })
     .catch(err => {
-        console.error('Update error:', err);
-        alert('Error updating cat');
+        console.error('❌ Update error:', err);
+        showNotification('❌ Update failed', 'error');
     });
 }
 
-// 10. Add Cat (Dashboard version)
-function addCatDashboard() {
-    const name = document.getElementById('name').value;
-    const tag = document.getElementById('tag').value;
-    const description = document.getElementById('description').value;
-    const img = document.getElementById('img').value;
+// Fix 3: Add function to update card in DOM immediately
+function updateCatCardInDOM(catId, updatedCat) {
+    const userCatsGallery = document.getElementById('userCatsGallery');
+    if (!userCatsGallery) return;
     
-    if (!name || !img) {
-        alert('Please enter name and image URL');
-        return;
+    // Find the card with this catId
+    const cards = userCatsGallery.querySelectorAll('.card');
+    cards.forEach(card => {
+        const editBtn = card.querySelector('.btn-edit');
+        if (editBtn && editBtn.onclick && 
+            editBtn.onclick.toString().includes(catId)) {
+            
+            // Update the card content
+            const img = card.querySelector('img') || card.querySelector('.no-image');
+            const name = card.querySelector('h3');
+            const desc = card.querySelector('p');
+            const tag = card.querySelector('.tag-badge');
+            
+            if (img) {
+                if (updatedCat.IMG) {
+                    if (img.tagName === 'IMG') {
+                        img.src = updatedCat.IMG;
+                    } else {
+                        // Replace no-image div with img
+                        img.outerHTML = `<img src="${updatedCat.IMG}" alt="${updatedCat.name}" loading="lazy" />`;
+                    }
+                }
+            }
+            
+            if (name) name.textContent = updatedCat.name || 'Unnamed Cat';
+            if (desc) desc.textContent = updatedCat.description || 'No description';
+            if (tag) tag.textContent = updatedCat.tag || 'No tag';
+        }
+    });
+}
+
+// Fix 4: Update stats immediately
+function updateDashboardStats() {
+    const userCatsList = userCats[currentUser.id] || [];
+    const userCatCount = document.getElementById('userCatCount');
+    if (userCatCount) {
+        userCatCount.textContent = userCatsList.length;
+    }
+}
+
+// Fix 5: Enhanced closeModal to always reset
+function closeModal() {
+    const modal = document.getElementById('catModal');
+    if (modal) modal.style.display = 'none';
+    
+    // Reset form
+    document.getElementById('name').value = '';
+    document.getElementById('tag').value = '';
+    document.getElementById('description').value = '';
+    document.getElementById('img').value = '';
+    
+    // Reset buttons
+    document.getElementById('addBtn').style.display = 'inline-block';
+    document.getElementById('editBtn').style.display = 'none';
+    
+    editingId = null;
+}
+
+// Fix 6: Better card creation with data attributes
+function createDashboardCatCard(cat) {
+    const div = document.createElement("div");
+    div.className = "card";
+    div.setAttribute('data-cat-id', cat.id); // Add data attribute
+    div.innerHTML = `
+        ${cat.IMG ? `<img src="${cat.IMG}" alt="${cat.name}" loading="lazy" />` : '<div class="no-image">No Image</div>'}
+        <h3>${escapeHTML(cat.name) || 'Unnamed Cat'}</h3>
+        <p>${escapeHTML(cat.description) || 'No description'}</p>
+        <span class="tag-badge">${escapeHTML(cat.tag) || 'No tag'}</span>
+        <div class="actions">
+            <button onclick="editUserCat('${cat.id}')" class="btn-edit">Edit</button>
+            <button onclick="deleteUserCat('${cat.id}')" class="btn-delete">Delete</button>
+        </div>
+    `;
+    return div;
+}
+
+// Fix 7: Enhanced delete function using data attributes
+function deleteUserCat(catId) {
+    if (!confirm('Delete this cat?')) return;
+    
+    // 1. Remove from DOM immediately using data attribute
+    const cards = document.querySelectorAll('.card[data-cat-id]');
+    cards.forEach(card => {
+        if (card.getAttribute('data-cat-id') == catId) {
+            card.style.opacity = '0.5'; // Visual feedback
+            card.style.transition = 'opacity 0.3s';
+            
+            setTimeout(() => {
+                card.remove(); // Remove after animation
+            }, 300);
+        }
+    });
+    
+    // 2. Update localStorage
+    if (currentUser && userCats[currentUser.id]) {
+        userCats[currentUser.id] = userCats[currentUser.id].filter(c => c.id != catId);
+        localStorage.setItem('userCats', JSON.stringify(userCats));
+        updateDashboardStats(); // Update stats immediately
     }
     
-    const cat = {
-        name: name,
-        tag: tag,
-        description: description,
-        IMG: img
-    };
-    
-    fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(cat)
+    // 3. Delete from API
+    fetch(`${API_URL}/${catId}`, {
+        method: 'DELETE'
     })
     .then(res => res.json())
     .then(data => {
-        // Add to user collection
-        const newCat = { ...cat, id: data.id };
-        if (!userCats[currentUser.id]) {
-            userCats[currentUser.id] = [];
-        }
-        userCats[currentUser.id].push(newCat);
-        localStorage.setItem('userCats', JSON.stringify(userCats));
-        
-        // Add to global data
-        catsData.push(newCat);
-        
-        closeModal();
-        loadUserCats();
+        console.log('✅ Deleted from API');
+        showNotification('✅ Cat deleted!', 'success');
         fetchTags();
-        
-        alert('Cat added!');
     })
     .catch(err => {
-        console.error('Add error:', err);
-        alert('Error adding cat');
+        console.error('Delete error:', err);
+        showNotification('❌ Delete failed', 'error');
     });
 }
 
-// 11. Handle Login Success
-function handleLoginSuccess(userData) {
-    currentUser = userData.user;
-    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+// Fix 8: Update loadUserCats to use data attributes
+function displayFilteredCats(cats) {
+    const userCatsGallery = document.getElementById('userCatsGallery');
+    if (!userCatsGallery) return;
     
-    // Update nav
-    updateNavigation();
+    userCatsGallery.innerHTML = '';
     
-    // Close login modal
-    loginModal.style.display = 'none';
-    document.getElementById('loginForm').reset();
+    if (cats.length === 0) {
+        userCatsGallery.innerHTML = '<div class="no-results">No cats found</div>';
+        return;
+    }
     
-    // Show dashboard
-    showDashboard();
-    
-    alert(`Welcome ${currentUser.username}!`);
-}
-
-// 12. Logout
-function logoutUser() {
-    currentUser = null;
-    localStorage.removeItem('currentUser');
-    
-    updateNavigation();
-    
-    // Show home
-    document.querySelectorAll('.cyber-section').forEach(s => s.style.display = 'none');
-    document.getElementById('home').style.display = 'block';
-    
-    alert('Logged out!');
-}
-
-// ============ INITIALIZATION ============
-
-document.addEventListener('DOMContentLoaded', function() {
-    // Update nav
-    updateNavigation();
-    
-    // Setup dashboard link
-    document.querySelectorAll('a[href="#dashboard"]').forEach(link => {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();
-            showDashboard();
-        });
+    cats.forEach(cat => {
+        const card = createDashboardCatCard(cat);
+        userCatsGallery.appendChild(card);
     });
     
-    // Setup logout button
-    const logoutBtn = document.getElementById('logoutBtn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            logoutUser();
-        });
-    }
-    
-    // Override add cat function for dashboard
-    const addBtn = document.getElementById('addBtn');
-    if (addBtn) {
-        // Save original
-        const originalAddCat = addBtn.onclick;
-        
-        // Check if we're in dashboard
-        addBtn.onclick = function() {
-            const dashboard = document.getElementById('dashboard');
-            if (dashboard && dashboard.style.display !== 'none') {
-                // In dashboard, use dashboard version
-                addCatDashboard();
-            } else {
-                // In home, use original
-                if (typeof originalAddCat === 'function') {
-                    originalAddCat();
-                } else {
-                    addCat();
-                }
-            }
-        };
-    }
-    
-    // Override edit button for dashboard
-    const editBtn = document.getElementById('editBtn');
-    if (editBtn) {
-        editBtn.onclick = updateUserCat;
-    }
-    
-    // Override login form
-    const loginForm = document.getElementById('loginForm');
-    if (loginForm) {
-        loginForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
-            
-            fetch('https://cat-project.fatimaezzahramahouat.workers.dev/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.user) {
-                    handleLoginSuccess(data);
-                } else {
-                    alert(data.message || 'Login failed');
-                }
-            })
-            .catch(err => {
-                console.error('Login error:', err);
-                alert('Login error');
-            });
-        });
-    }
-    
-    // Setup dashboard search
-    const dashboardSearch = document.getElementById('dashboardSearchInput');
-    if (dashboardSearch) {
-        dashboardSearch.addEventListener('input', function() {
-            loadUserCats();
-        });
-    }
-    
-    // Setup dashboard tag filter
-    const dashboardTagFilter = document.getElementById('dashboardTagFilter');
-    if (dashboardTagFilter) {
-        dashboardTagFilter.addEventListener('change', function() {
-            loadUserCats();
-        });
-    }
-    
-    // Setup dashboard add button
-    const addUserCatBtn = document.getElementById('addUserCatBtn');
-    if (addUserCatBtn) {
-        addUserCatBtn.addEventListener('click', function() {
-            openAddModal();
-        });
-    }
-});
+    // Update stats
+    updateDashboardStats();
+}
 
-// Make functions global
-window.editUserCat = editUserCat;
-window.deleteUserCat = deleteUserCat;
-window.updateUserCat = updateUserCat;
-window.showDashboard = showDashboard;
-window.logoutUser = logoutUser;
+// Fix 9: Make sure updateDashboardStats is called everywhere
+function loadUserCats() {
+    const userCatsGallery = document.getElementById('userCatsGallery');
+    const noCatsMessage = document.getElementById('noCatsMessage');
+    
+    if (!userCatsGallery) return;
+    
+    const userCatsList = userCats[currentUser.id] || [];
+    
+    if (userCatsList.length === 0) {
+        if (noCatsMessage) noCatsMessage.style.display = 'block';
+        userCatsGallery.innerHTML = '';
+        updateDashboardStats(); // Update stats
+        return;
+    }
+    
+    if (noCatsMessage) noCatsMessage.style.display = 'none';
+    displayFilteredCats(userCatsList);
+    
+    // Rest of the function...
+}
 
 
 

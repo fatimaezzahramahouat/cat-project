@@ -657,34 +657,46 @@ document.querySelector('.contact-form').addEventListener('submit', function (e) 
 
 
 //REGISTER MODAL hada gher dyal html
+// فتح وغلق modal
 const registerModal = document.getElementById("registerModal");
 const openRegisterBtn = document.getElementById("openRegister");
 const closeRegisterBtn = document.getElementById("closeRegister");
 
 openRegisterBtn.onclick = () => registerModal.style.display = "flex";
-closeRegisterBtn.onclick = () => registerModal.style.display = "none";  
-window.onclick = (e) => {
-    if (e.target === registerModal) {
-      registerModal.style.display = "none";
+closeRegisterBtn.onclick = () => registerModal.style.display = "none";
+window.onclick = (e) => { if (e.target === registerModal) registerModal.style.display = "none"; };
+
+// Handle form submission
+const form = document.getElementById("registerForm");
+
+form.addEventListener("submit", async (e) => {
+  e.preventDefault(); // منع reload الصفحة
+
+  const username = document.getElementById("username").value;
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  try {
+    const res = await fetch("https://cat-project.fatimaezzahramahouat.workers.dev/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, email, password })
+    });
+
+    const data = await res.json();
+    alert(data.message);
+
+    if (res.ok) {
+      registerModal.style.display = "none"; // close modal
+      form.reset(); // clear form
     }
-    };
-//zdto ela qbl register form submission
-document.getElementById("registerForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
 
-  const res = await fetch("/register", {  // Make sure this URL matches your deployed Worker
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      username: username.value,
-      email: email.value,
-      password: password.value
-    })
-  });
-
-  const data = await res.json();
-  alert(data.message);
+  } catch (err) {
+    console.error("Register error:", err);
+    alert("Something went wrong.");
+  }
 });
+
 
 
 

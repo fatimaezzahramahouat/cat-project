@@ -15,45 +15,11 @@ export default {
         if (method === "OPTIONS") {
             return new Response(null, { headers: corsHeaders });
         }
-        //register route
-{
-    if (request.method === "POST" && new URL(request.url).pathname === "/register") {
+        
+
+   if (request.method === "POST" && new URL(request.url).pathname === "/register") {
       return register(request, env);
     }
-
-    return new Response("Not found", { status: 404 });
-  }
-  async function register(request, env) {
-  const body = await request.json();
-  const { username, email, password } = body;
-
-  if (!username || !email || !password) {
-    return Response.json({ message: "All fields required" }, { status: 400 });
-  }
-
-  // 🔐 hash password
-  const encoder = new TextEncoder();
-  const data = encoder.encode(password);
-  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const password_hash = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
-
-  try {
-    await env.DB.prepare(`
-      INSERT INTO users (username, email, password_hash)
-      VALUES (?, ?, ?)
-    `).bind(username, email, password_hash).run();
-
-    return Response.json({ message: "User registered successfully" });
-
-  } catch (err) {
-    return Response.json(
-      { message: "Username or email already exists" },
-      { status: 400 }
-    );
-  }
-}
-
         // ========== API ROUTES ==========
 
         // GET /cats - Get all cats
@@ -196,8 +162,41 @@ export default {
             }
         }
 
-        ///AUTH
+        ///AUTH kankhdmo b web crypto api hit worker 
 
+    async function register(request, env) {
+  const body = await request.json();
+  const { username, email, password } = body;
+
+  if (!username || !email || !password) {
+    return Response.json({ message: "All fields required" }, { status: 400 });
+  }
+
+  // 🔐 hash password
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const password_hash = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+
+  try {
+    await env.DB.prepare(`
+      INSERT INTO users (username, email, password_hash)
+      VALUES (?, ?, ?)
+    `).bind(username, email, password_hash).run();
+
+    return Response.json({ message: "User registered successfully" });
+
+  } catch (err) {
+    return Response.json(
+      { message: "Username or email already exists" },
+      { status: 400 }
+    );
+  }
+}
+
+
+  
 
 
 
